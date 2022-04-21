@@ -1,0 +1,38 @@
+plugins {
+  id 'java-library'
+  id 'antlr'
+  id 'idea'
+}
+
+
+group 'de.sayayi.lib'
+version '0.1.0'
+
+
+def antlr4Version = "4.9.3"
+def junitVersion = "5.8.2"
+def lombokVersion = "1.18.24"
+def jetbrainsAnnotationsVersion = "23.0.0"
+
+
+repositories {
+  mavenCentral()
+}
+
+
+dependencies {
+  implementation "org.antlr:antlr4-runtime:${antlr4Version}"
+
+  compileOnly "org.projectlombok:lombok:${lombokVersion}"
+  compileOnly "org.jetbrains:annotations:${jetbrainsAnnotationsVersion}"
+
+  testImplementation "org.junit.jupiter:junit-jupiter-api:${junitVersion}"
+  testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${junitVersion}"
+
+  antlr "org.antlr:antlr4:${antlr4Version}"
+}
+
+
+test {
+  useJUnitPlatform()
+}
