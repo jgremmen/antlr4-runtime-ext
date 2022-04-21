@@ -2,11 +2,15 @@ plugins {
   id 'java-library'
   id 'antlr'
   id 'idea'
+  id 'maven-publish'
+  id 'jacoco'
+  id 'signing'
 }
 
 buildDir = ".build"
 
 
+description 'Common ANTLR4 Runtime'
 group 'de.sayayi.lib'
 version '0.1.0'
 
@@ -32,6 +36,10 @@ java {
 test {
   useJUnitPlatform()
 }
+
+
+apply from: file('gradle/javadoc.gradle')
+apply from: file('gradle/publishing.gradle')
 
 
 dependencies {
