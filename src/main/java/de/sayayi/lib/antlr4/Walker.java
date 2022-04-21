@@ -60,13 +60,13 @@ public enum Walker
    * </p>
    * <p>
    *   The following methods are never invoked by this walker:
-   *   <ul>
-   *     <li>{@link ParseTreeListener#enterEveryRule(ParserRuleContext)}</li>
-   *     <li>{@link ParseTreeListener#exitEveryRule(ParserRuleContext)}</li>
-   *     <li>{@link ParseTreeListener#visitTerminal(TerminalNode)}</li>
-   *     <li>{@link ParseTreeListener#visitErrorNode(ErrorNode)}</li>
-   *   </ul>
    * </p>
+   * <ul>
+   *   <li>{@link ParseTreeListener#enterEveryRule(ParserRuleContext)}</li>
+   *   <li>{@link ParseTreeListener#exitEveryRule(ParserRuleContext)}</li>
+   *   <li>{@link ParseTreeListener#visitTerminal(TerminalNode)}</li>
+   *   <li>{@link ParseTreeListener#visitErrorNode(ErrorNode)}</li>
+   * </ul>
    */
   WALK_EXIT_RULES_RECURSIVE {
     @Override
@@ -78,7 +78,18 @@ public enum Walker
 
 
   /**
-   * Walk and invoke rule specific enter and exit methods only.
+   * <p>
+   *   Walk and invoke rule specific enter and exit methods only.
+   * </p>
+   * <p>
+   *   The following methods are never invoked by this walker:
+   * </p>
+   * <ul>
+   *   <li>{@link ParseTreeListener#enterEveryRule(ParserRuleContext)}</li>
+   *   <li>{@link ParseTreeListener#exitEveryRule(ParserRuleContext)}</li>
+   *   <li>{@link ParseTreeListener#visitTerminal(TerminalNode)}</li>
+   *   <li>{@link ParseTreeListener#visitErrorNode(ErrorNode)}</li>
+   * </ul>
    */
   WALK_ENTER_AND_EXIT_RULES_RECURSIVE {
     @Override
