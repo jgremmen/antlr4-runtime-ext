@@ -22,25 +22,35 @@ repositories {
 }
 
 
+java {
+  toolchain {
+    languageVersion = JavaLanguageVersion.of(8)
+  }
+}
+
+
+test {
+  useJUnitPlatform()
+}
+
+
 dependencies {
   // java
   annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
 
   implementation "org.antlr:antlr4-runtime:${antlr4Version}"
 
-  compileOnly "org.projectlombok:lombok:${lombokVersion}"
-  compileOnly "org.jetbrains:annotations:${jetbrainsAnnotationsVersion}"
+  compileOnlyApi "org.projectlombok:lombok:${lombokVersion}"
+  compileOnlyApi "org.jetbrains:annotations:${jetbrainsAnnotationsVersion}"
 
   // test
   testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+
+  testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
+  testCompileOnly "org.jetbrains:annotations:${jetbrainsAnnotationsVersion}"
 
   testImplementation "org.junit.jupiter:junit-jupiter-api:${junitVersion}"
   testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${junitVersion}"
 
   antlr "org.antlr:antlr4:${antlr4Version}"
-}
-
-
-test {
-  useJUnitPlatform()
 }
