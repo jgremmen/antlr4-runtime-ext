@@ -20,17 +20,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.val;
 import lombok.var;
 import org.antlr.v4.runtime.*;
-import org.antlr.v4.runtime.tree.IterativeParseTreeWalker;
-import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeListener;
-import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Function;
 
-import static de.sayayi.lib.antlr4.ParseTreeWalker.walkEnterAndExitsOnly;
-import static de.sayayi.lib.antlr4.ParseTreeWalker.walkExitsOnly;
 import static java.lang.Character.isSpaceChar;
 import static java.util.Arrays.fill;
 import static java.util.Objects.requireNonNull;
@@ -55,13 +50,8 @@ public abstract class AbstractAntlr4Parser
 
   protected <L extends Lexer & ParserInputSupplier,P extends Parser,C extends ParserRuleContext,R>
       R parse(@NotNull L lexer, @NotNull Function<L,P> parserSupplier, @NotNull Function<P,C> ruleExecutor,
-              @NotNull ParseTreeListener listener, @NotNull Function<C,R> contextResultExtractor)
-  {
-    val parserRuleContext = parse(lexer, parserSupplier, ruleExecutor);
-
-    walk(listener, parserRuleContext);
-
-    return contextResultExtractor.apply(parserRuleContext);
+              @NotNull ParseTreeListener listener, @NotNull Function<C,R> contextResultExtractor) {
+    return contextResultExtractor.apply(walk(listener, parse(lexer, parserSupplier, ruleExecutor)));
   }
 
 
@@ -89,6 +79,17 @@ public abstract class AbstractAntlr4Parser
     parser.addErrorListener(errorListener);
 
     return ruleExecutor.apply(parser);
+  }
+
+
+  @Contract(mutates = "param2")
+  private <C extends ParserRuleContext> C walk(@NotNull ParseTreeListener listener, @NotNull C parserRuleContext)
+  {
+    (listener instanceof WalkerSupplier
+        ? ((WalkerSupplier)listener).getWalker()
+        : Walker.WALK_FULL_RECURSIVE).walk(listener, parserRuleContext);
+
+    return parserRuleContext;
   }
 
 
@@ -124,30 +125,6 @@ public abstract class AbstractAntlr4Parser
     }
 
     return new Token[] { requireNonNull(offendingSymbol), offendingSymbol };
-  }
-
-
-  @Contract(mutates = "param2")
-  private void walk(@NotNull ParseTreeListener listener, @NotNull ParseTree parseTree)
-  {
-    if (listener instanceof WalkerSupplier)
-      switch(((WalkerSupplier)listener).getWalker())
-      {
-        case WALK_EXIT_RULES_ONLY:
-          walkExitsOnly(listener, parseTree);
-          return;
-
-        case WALK_ENTER_AND_EXIT_RULES_ONLY:
-          walkEnterAndExitsOnly(listener, parseTree);
-          return;
-
-        case WALK_FULL_HEAP:
-          new IterativeParseTreeWalker().walk(listener, parseTree);
-          return;
-      }
-
-    // default walker
-    ParseTreeWalker.DEFAULT.walk(listener, parseTree);
   }
 
 
@@ -192,21 +169,10 @@ public abstract class AbstractAntlr4Parser
 
 
 
-  public interface WalkerSupplier
+  public interface WalkerSupplier extends ParseTreeListener
   {
     @Contract(pure = true)
     @NotNull Walker getWalker();
-  }
-
-
-
-
-  public enum Walker
-  {
-    WALK_FULL_RECURSIVE,
-    WALK_FULL_HEAP,
-    WALK_EXIT_RULES_ONLY,
-    WALK_ENTER_AND_EXIT_RULES_ONLY
   }
 
 

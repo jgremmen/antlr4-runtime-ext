@@ -18,7 +18,7 @@ package de.sayayi.lib.antlr4;
 import lombok.NoArgsConstructor;
 import lombok.val;
 import org.antlr.v4.runtime.ParserRuleContext;
-import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.IterativeParseTreeWalker;
 import org.antlr.v4.runtime.tree.ParseTreeListener;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -33,34 +33,51 @@ import static lombok.AccessLevel.PRIVATE;
 @NoArgsConstructor(access = PRIVATE)
 final class ParseTreeWalker
 {
-  @Contract(mutates = "param2")
-  static void walkExitsOnly(@NotNull ParseTreeListener listener, @NotNull ParseTree parseTree)
-  {
-    if (parseTree instanceof ParserRuleContext)
-    {
-      val children = ((ParserRuleContext)parseTree).children;
-      if (children != null)
-        for(val parseTreeChild: children)
-          walkExitsOnly(listener, parseTreeChild);
+  private static final IterativeParseTreeWalker FULL_HEAP_WALKER = new IterativeParseTreeWalker();
 
-      ((ParserRuleContext)parseTree).exitRule(listener);
+
+  @Contract(mutates = "param2")
+  static void walkExitsOnlyRecursive(@NotNull ParseTreeListener listener,
+                                     @NotNull ParserRuleContext parserRuleContext)
+  {
+    val children = parserRuleContext.children;
+    if (children != null)
+    {
+      for(val parseTreeChild: children)
+        if (parseTreeChild instanceof ParserRuleContext)
+          walkExitsOnlyRecursive(listener, (ParserRuleContext)parseTreeChild);
     }
+
+    parserRuleContext.exitRule(listener);
   }
 
 
   @Contract(mutates = "param2")
-  static void walkEnterAndExitsOnly(@NotNull ParseTreeListener listener, @NotNull ParseTree parseTree)
+  static void walkEnterAndExitsOnlyRecursive(@NotNull ParseTreeListener listener,
+                                             @NotNull ParserRuleContext parserRuleContext)
   {
-    if (parseTree instanceof ParserRuleContext)
+    parserRuleContext.enterRule(listener);
+
+    val children = parserRuleContext.children;
+    if (children != null)
     {
-      ((ParserRuleContext)parseTree).enterRule(listener);
-
-      val children = ((ParserRuleContext)parseTree).children;
-      if (children != null)
-        for(val parseTreeChild: children)
-          walkEnterAndExitsOnly(listener, parseTreeChild);
-
-      ((ParserRuleContext)parseTree).exitRule(listener);
+      for(val parseTreeChild: children)
+        if (parseTreeChild instanceof ParserRuleContext)
+          walkEnterAndExitsOnlyRecursive(listener, (ParserRuleContext)parseTreeChild);
     }
+
+    parserRuleContext.exitRule(listener);
+  }
+
+
+  @Contract(mutates = "param2")
+  static void walkFullRecursive(@NotNull ParseTreeListener listener, @NotNull ParserRuleContext parserRuleContext) {
+    org.antlr.v4.runtime.tree.ParseTreeWalker.DEFAULT.walk(listener, parserRuleContext);
+  }
+
+
+  @Contract(mutates = "param2")
+  static void walkFullHeap(@NotNull ParseTreeListener listener, @NotNull ParserRuleContext parserRuleContext) {
+    FULL_HEAP_WALKER.walk(listener, parserRuleContext);
   }
 }
