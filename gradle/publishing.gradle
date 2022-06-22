@@ -65,8 +65,8 @@ publishing {
       }
 
       pom {
-        name = 'Common ANTLR4 Runtime'
-        description = "Common ANTLR4 Runtime"
+        name = 'ANTLR4 Runtime Extensions'
+        description = "ANTLR4 Runtime Extensions"
         url = 'https://github.com/jgremmen/antlr4-runtime'
         inceptionYear = '2022'
 

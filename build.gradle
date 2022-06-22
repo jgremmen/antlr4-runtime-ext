@@ -10,7 +10,7 @@ plugins {
 buildDir = ".build"
 
 
-description 'Common ANTLR4 Runtime'
+description 'ANTLR4 Runtime Extensions'
 group 'de.sayayi.lib'
 version '0.1.1'
 
