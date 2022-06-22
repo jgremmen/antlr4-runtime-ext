@@ -19,10 +19,14 @@ import lombok.NoArgsConstructor;
 import lombok.val;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.IterativeParseTreeWalker;
+import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeListener;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Iterator;
+
+import static java.util.Collections.emptyIterator;
 import static lombok.AccessLevel.PRIVATE;
 
 
@@ -79,5 +83,12 @@ final class ParseTreeWalker
   @Contract(mutates = "param2")
   static void walkFullHeap(@NotNull ParseTreeListener listener, @NotNull ParserRuleContext parserRuleContext) {
     FULL_HEAP_WALKER.walk(listener, parserRuleContext);
+  }
+
+
+  private static @NotNull Iterator<ParseTree> fromParseRuleContext(@NotNull ParserRuleContext parserRuleContext)
+  {
+    val children = parserRuleContext.children;
+    return children == null ? emptyIterator() : children.iterator();
   }
 }
