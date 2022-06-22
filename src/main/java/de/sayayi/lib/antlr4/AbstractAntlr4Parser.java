@@ -21,6 +21,7 @@ import lombok.val;
 import lombok.var;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.ParseTreeListener;
+import org.antlr.v4.runtime.tree.TerminalNode;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -132,6 +133,13 @@ public abstract class AbstractAntlr4Parser
   protected void syntaxError(@NotNull String parserInput, @NotNull ParserRuleContext ctx,
                              @NotNull String errorMsg) {
     syntaxError(parserInput, new Token[] { ctx.getStart(), ctx.getStop() }, errorMsg, null);
+  }
+
+
+  @Contract("_, _, _ -> fail")
+  protected void syntaxError(@NotNull String parserInput, @NotNull TerminalNode terminalNode,
+                             @NotNull String errorMsg) {
+    syntaxError(parserInput, terminalNode.getSymbol(), errorMsg);
   }
 
 
