@@ -16,7 +16,7 @@
 
 
 javadoc {
-  title "Common ANTLR4 Runtime ${version}"
+  title "ANTLR4 Runtime Extensions ${version}"
 
   (options as StandardJavadocDocletOptions).with {
     linksOffline 'https://javadoc.io/doc/org.jetbrains/annotations/20.0.0/', 'gradle/javadocs/jetbrains-annotations'
