@@ -16,7 +16,7 @@ version '0.1.1'
 
 
 def antlr4Version = "4.9.3"
-def junitVersion = "5.8.2"
+def junitVersion = "5.9.0"
 def lombokVersion = "1.18.24"
 def jetbrainsAnnotationsVersion = "23.0.0"
 
