@@ -21,6 +21,7 @@ import org.antlr.v4.runtime.Vocabulary;
 import lombok.AllArgsConstructor;
 import lombok.val;
 
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Map.Entry;
@@ -52,6 +53,7 @@ public abstract class AbstractVocabulary implements Vocabulary
   protected abstract void addTokens();
 
 
+  @Contract(mutates = "this")
   protected void add(int tokenType, @NotNull String literal, @NotNull String symbol) {
     vocabulary.put(tokenType, new Name(literal, symbol));
   }
