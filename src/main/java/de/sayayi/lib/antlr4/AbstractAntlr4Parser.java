@@ -51,6 +51,7 @@ public abstract class AbstractAntlr4Parser
   }
 
 
+  @Contract(mutates = "param1")
   protected <L extends Lexer & ParserInputSupplier,P extends Parser,C extends ParserRuleContext,R>
       R parse(@NotNull L lexer, @NotNull Function<L,P> parserSupplier, @NotNull Function<P,C> ruleExecutor,
               @NotNull ParseTreeListener listener, @NotNull Function<C,R> contextResultExtractor) {
@@ -58,17 +59,16 @@ public abstract class AbstractAntlr4Parser
   }
 
 
-  @NotNull
+  @Contract(value = "_, _, _ -> new", mutates = "param1")
   protected <L extends Lexer & ParserInputSupplier,P extends Parser,C extends ParserRuleContext>
-      C parse(@NotNull L lexer, @NotNull Function<L,P> parserSupplier, @NotNull Function<P,C> ruleExecutor)
+      @NotNull C parse(@NotNull L lexer, @NotNull Function<L,P> parserSupplier, @NotNull Function<P,C> ruleExecutor)
   {
-    val parserInput = lexer.getParserInput();
     val errorListener = new BaseErrorListener() {
       @Override
       public void syntaxError(@NotNull Recognizer<?,?> recognizer, Object offendingSymbol, int line,
                               int charPositionInLine, String msg, RecognitionException ex)
       {
-        AbstractAntlr4Parser.this.syntaxError(parserInput, recognizer, (Token)offendingSymbol,
+        AbstractAntlr4Parser.this.syntaxError(lexer.getParserInput(), recognizer, (Token)offendingSymbol,
             line, charPositionInLine, msg, ex);
       }
     };
@@ -81,12 +81,13 @@ public abstract class AbstractAntlr4Parser
     parser.removeErrorListener(ConsoleErrorListener.INSTANCE);  // console polluter
     parser.addErrorListener(errorListener);
 
-    return ruleExecutor.apply(parser);
+    return requireNonNull(ruleExecutor.apply(parser));
   }
 
 
   @Contract(mutates = "param2")
-  private <C extends ParserRuleContext> C walk(@NotNull ParseTreeListener listener, @NotNull C parserRuleContext)
+  private <C extends ParserRuleContext>
+      @NotNull C walk(@NotNull ParseTreeListener listener, @NotNull C parserRuleContext)
   {
     (listener instanceof WalkerSupplier ? ((WalkerSupplier)listener).getWalker() : WALK_FULL_RECURSIVE)
         .walk(listener, parserRuleContext);
@@ -95,6 +96,7 @@ public abstract class AbstractAntlr4Parser
   }
 
 
+  @Contract("_, _, _, _, _, _, _ -> fail")
   private void syntaxError(@NotNull String parserInput, @NotNull Recognizer<?,?> recognizer,
                            Token offendingSymbol, int line, int charPositionInLine,
                            String msg, RecognitionException ex)
@@ -182,7 +184,9 @@ public abstract class AbstractAntlr4Parser
   public interface WalkerSupplier extends ParseTreeListener
   {
     @Contract(pure = true)
-    @NotNull Walker getWalker();
+    default @NotNull Walker getWalker() {
+      return WALK_FULL_RECURSIVE;
+    }
   }
 
 
