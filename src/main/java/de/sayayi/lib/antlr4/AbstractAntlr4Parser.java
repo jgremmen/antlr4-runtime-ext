@@ -28,6 +28,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Function;
 
+import static de.sayayi.lib.antlr4.walker.Walker.WALK_FULL_RECURSIVE;
 import static java.lang.Character.isSpaceChar;
 import static java.util.Arrays.fill;
 import static java.util.Objects.requireNonNull;
@@ -87,9 +88,8 @@ public abstract class AbstractAntlr4Parser
   @Contract(mutates = "param2")
   private <C extends ParserRuleContext> C walk(@NotNull ParseTreeListener listener, @NotNull C parserRuleContext)
   {
-    (listener instanceof WalkerSupplier
-        ? ((WalkerSupplier)listener).getWalker()
-        : Walker.WALK_FULL_RECURSIVE).walk(listener, parserRuleContext);
+    (listener instanceof WalkerSupplier ? ((WalkerSupplier)listener).getWalker() : WALK_FULL_RECURSIVE)
+        .walk(listener, parserRuleContext);
 
     return parserRuleContext;
   }
@@ -162,6 +162,7 @@ public abstract class AbstractAntlr4Parser
   }
 
 
+  @Contract("_, _, _, _, _, _ -> new")
   protected abstract @NotNull RuntimeException createException(
       @NotNull String parserInput, @NotNull Token startToken, @NotNull Token stopToken,
       @NotNull String formattedMessage, @NotNull String errorMsg, RecognitionException ex);

@@ -16,7 +16,6 @@
 package de.sayayi.lib.antlr4.walker;
 
 import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import lombok.val;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.IterativeParseTreeWalker;
@@ -63,21 +62,20 @@ final class ParseTreeWalker
   static void walkExitsOnlyIterative(@NotNull ParseTreeListener listener,
                                      @NotNull ParserRuleContext parserRuleContext)
   {
-    val nodeStack = new ArrayDeque<ParserRuleContextIndex>();
-    nodeStack.addFirst(new ParserRuleContextIndex(parserRuleContext));
+    val nodeStack = new ArrayDeque<ParserRuleContextNode>();
+    nodeStack.addFirst(new ParserRuleContextNode(parserRuleContext));
 
     for(ParseTree childNode; !nodeStack.isEmpty();)
     {
-      val nodeIndex = nodeStack.peekFirst();
-      val currentNode = nodeIndex.node;
+      val parentNode = nodeStack.peekFirst();
 
-      if ((childNode = currentNode.getChild(nodeIndex.index++)) == null)
+      if ((childNode = parentNode.getNextChild()) == null)
       {
-        currentNode.exitRule(listener);
+        parentNode.parserRuleContext.exitRule(listener);
         nodeStack.pollFirst();
       }
       else if (childNode instanceof ParserRuleContext)
-        nodeStack.push(new ParserRuleContextIndex((ParserRuleContext)childNode));
+        nodeStack.push(new ParserRuleContextNode((ParserRuleContext)childNode));
     }
   }
 
@@ -107,25 +105,26 @@ final class ParseTreeWalker
   static void walkEnterAndExitsOnlyIterative(@NotNull ParseTreeListener listener,
                                              @NotNull ParserRuleContext parserRuleContext)
   {
-    val nodeStack = new ArrayDeque<ParserRuleContextIndex>();
-    nodeStack.addFirst(new ParserRuleContextIndex(parserRuleContext));
+    val nodeStack = new ArrayDeque<ParserRuleContextNode>();
+    nodeStack.addFirst(new ParserRuleContextNode(parserRuleContext));
 
     parserRuleContext.enterRule(listener);
 
     for(ParseTree childNode; !nodeStack.isEmpty();)
     {
-      val nodeIndex = nodeStack.peekFirst();
-      val currentNode = nodeIndex.node;
+      val parentNode = nodeStack.peekFirst();
 
-      if ((childNode = currentNode.getChild(nodeIndex.index++)) == null)
+      if ((childNode = parentNode.getNextChild()) == null)
       {
-        currentNode.exitRule(listener);
+        parentNode.parserRuleContext.exitRule(listener);
         nodeStack.pollFirst();
       }
       else if (childNode instanceof ParserRuleContext)
       {
-        currentNode.enterRule(listener);
-        nodeStack.push(new ParserRuleContextIndex((ParserRuleContext)childNode));
+        val childNodeContext = (ParserRuleContext)childNode;
+        childNodeContext.enterRule(listener);
+
+        nodeStack.push(new ParserRuleContextNode(childNodeContext));
       }
     }
   }
@@ -140,15 +139,5 @@ final class ParseTreeWalker
   @Contract(mutates = "param2")
   static void walkFullIterative(@NotNull ParseTreeListener listener, @NotNull ParserRuleContext parserRuleContext) {
     FULL_HEAP_WALKER.walk(listener, parserRuleContext);
-  }
-
-
-
-
-  @RequiredArgsConstructor(access = PRIVATE)
-  private static final class ParserRuleContextIndex
-  {
-    private final ParserRuleContext node;
-    private short index = 0;
   }
 }

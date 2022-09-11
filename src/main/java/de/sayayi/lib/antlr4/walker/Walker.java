@@ -19,6 +19,7 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.ParseTreeListener;
 import org.antlr.v4.runtime.tree.TerminalNode;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import static de.sayayi.lib.antlr4.walker.ParseTreeWalker.*;
@@ -144,5 +145,6 @@ public enum Walker
   };
 
 
+  @Contract(mutates = "param2")
   public abstract void walk(@NotNull ParseTreeListener listener, @NotNull ParserRuleContext parserRuleContext);
 }
