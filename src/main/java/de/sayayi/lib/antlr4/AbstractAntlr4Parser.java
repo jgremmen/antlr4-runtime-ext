@@ -15,6 +15,7 @@
  */
 package de.sayayi.lib.antlr4;
 
+import de.sayayi.lib.antlr4.walker.Walker;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.val;

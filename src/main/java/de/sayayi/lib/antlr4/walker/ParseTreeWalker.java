@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.sayayi.lib.antlr4;
+package de.sayayi.lib.antlr4.walker;
 
 import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.val;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.IterativeParseTreeWalker;
@@ -24,9 +25,8 @@ import org.antlr.v4.runtime.tree.ParseTreeListener;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Iterator;
+import java.util.ArrayDeque;
 
-import static java.util.Collections.emptyIterator;
 import static lombok.AccessLevel.PRIVATE;
 
 
@@ -56,6 +56,32 @@ final class ParseTreeWalker
   }
 
 
+  /**
+   * @since 0.2.0
+   */
+  @Contract(mutates = "param2")
+  static void walkExitsOnlyIterative(@NotNull ParseTreeListener listener,
+                                     @NotNull ParserRuleContext parserRuleContext)
+  {
+    val nodeStack = new ArrayDeque<ParserRuleContextIndex>();
+    nodeStack.addFirst(new ParserRuleContextIndex(parserRuleContext));
+
+    for(ParseTree childNode; !nodeStack.isEmpty();)
+    {
+      val nodeIndex = nodeStack.peekFirst();
+      val currentNode = nodeIndex.node;
+
+      if ((childNode = currentNode.getChild(nodeIndex.index++)) == null)
+      {
+        currentNode.exitRule(listener);
+        nodeStack.pollFirst();
+      }
+      else if (childNode instanceof ParserRuleContext)
+        nodeStack.push(new ParserRuleContextIndex((ParserRuleContext)childNode));
+    }
+  }
+
+
   @Contract(mutates = "param2")
   static void walkEnterAndExitsOnlyRecursive(@NotNull ParseTreeListener listener,
                                              @NotNull ParserRuleContext parserRuleContext)
@@ -74,6 +100,37 @@ final class ParseTreeWalker
   }
 
 
+  /**
+   * @since 0.2.0
+   */
+  @Contract(mutates = "param2")
+  static void walkEnterAndExitsOnlyIterative(@NotNull ParseTreeListener listener,
+                                             @NotNull ParserRuleContext parserRuleContext)
+  {
+    val nodeStack = new ArrayDeque<ParserRuleContextIndex>();
+    nodeStack.addFirst(new ParserRuleContextIndex(parserRuleContext));
+
+    parserRuleContext.enterRule(listener);
+
+    for(ParseTree childNode; !nodeStack.isEmpty();)
+    {
+      val nodeIndex = nodeStack.peekFirst();
+      val currentNode = nodeIndex.node;
+
+      if ((childNode = currentNode.getChild(nodeIndex.index++)) == null)
+      {
+        currentNode.exitRule(listener);
+        nodeStack.pollFirst();
+      }
+      else if (childNode instanceof ParserRuleContext)
+      {
+        currentNode.enterRule(listener);
+        nodeStack.push(new ParserRuleContextIndex((ParserRuleContext)childNode));
+      }
+    }
+  }
+
+
   @Contract(mutates = "param2")
   static void walkFullRecursive(@NotNull ParseTreeListener listener, @NotNull ParserRuleContext parserRuleContext) {
     org.antlr.v4.runtime.tree.ParseTreeWalker.DEFAULT.walk(listener, parserRuleContext);
@@ -81,14 +138,17 @@ final class ParseTreeWalker
 
 
   @Contract(mutates = "param2")
-  static void walkFullHeap(@NotNull ParseTreeListener listener, @NotNull ParserRuleContext parserRuleContext) {
+  static void walkFullIterative(@NotNull ParseTreeListener listener, @NotNull ParserRuleContext parserRuleContext) {
     FULL_HEAP_WALKER.walk(listener, parserRuleContext);
   }
 
 
-  private static @NotNull Iterator<ParseTree> fromParseRuleContext(@NotNull ParserRuleContext parserRuleContext)
+
+
+  @RequiredArgsConstructor(access = PRIVATE)
+  private static final class ParserRuleContextIndex
   {
-    val children = parserRuleContext.children;
-    return children == null ? emptyIterator() : children.iterator();
+    private final ParserRuleContext node;
+    private short index = 0;
   }
 }

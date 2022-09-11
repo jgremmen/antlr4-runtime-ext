@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.sayayi.lib.antlr4;
+package de.sayayi.lib.antlr4.walker;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ErrorNode;
@@ -21,7 +21,7 @@ import org.antlr.v4.runtime.tree.ParseTreeListener;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.jetbrains.annotations.NotNull;
 
-import static de.sayayi.lib.antlr4.ParseTreeWalker.*;
+import static de.sayayi.lib.antlr4.walker.ParseTreeWalker.*;
 
 
 /**
@@ -35,8 +35,7 @@ public enum Walker
    */
   WALK_FULL_RECURSIVE {
     @Override
-    public void walk(@NotNull ParseTreeListener listener,
-                     @NotNull ParserRuleContext parserRuleContext) {
+    public void walk(@NotNull ParseTreeListener listener, @NotNull ParserRuleContext parserRuleContext) {
       walkFullRecursive(listener, parserRuleContext);
     }
   },
@@ -47,9 +46,8 @@ public enum Walker
    */
   WALK_FULL_HEAP {
     @Override
-    public void walk(@NotNull ParseTreeListener listener,
-                     @NotNull ParserRuleContext parserRuleContext) {
-      walkFullHeap(listener, parserRuleContext);
+    public void walk(@NotNull ParseTreeListener listener, @NotNull ParserRuleContext parserRuleContext) {
+      walkFullIterative(listener, parserRuleContext);
     }
   },
 
@@ -70,9 +68,32 @@ public enum Walker
    */
   WALK_EXIT_RULES_RECURSIVE {
     @Override
-    public void walk(@NotNull ParseTreeListener listener,
-                     @NotNull ParserRuleContext parserRuleContext) {
+    public void walk(@NotNull ParseTreeListener listener, @NotNull ParserRuleContext parserRuleContext) {
       walkExitsOnlyRecursive(listener, parserRuleContext);
+    }
+  },
+
+
+  /**
+   * <p>
+   *   Walk and invoke rule specific exit methods only using the heap.
+   * </p>
+   * <p>
+   *   The following methods are never invoked by this walker:
+   * </p>
+   * <ul>
+   *   <li>{@link ParseTreeListener#enterEveryRule(ParserRuleContext)}</li>
+   *   <li>{@link ParseTreeListener#exitEveryRule(ParserRuleContext)}</li>
+   *   <li>{@link ParseTreeListener#visitTerminal(TerminalNode)}</li>
+   *   <li>{@link ParseTreeListener#visitErrorNode(ErrorNode)}</li>
+   * </ul>
+   *
+   * @since 0.2.0
+   */
+  WALK_EXIT_RULES_HEAP {
+    @Override
+    public void walk(@NotNull ParseTreeListener listener, @NotNull ParserRuleContext parserRuleContext) {
+      walkExitsOnlyIterative(listener, parserRuleContext);
     }
   },
 
@@ -93,13 +114,35 @@ public enum Walker
    */
   WALK_ENTER_AND_EXIT_RULES_RECURSIVE {
     @Override
-    public void walk(@NotNull ParseTreeListener listener,
-                     @NotNull ParserRuleContext parserRuleContext) {
+    public void walk(@NotNull ParseTreeListener listener, @NotNull ParserRuleContext parserRuleContext) {
       walkEnterAndExitsOnlyRecursive(listener, parserRuleContext);
+    }
+  },
+
+
+  /**
+   * <p>
+   *   Walk and invoke rule specific enter and exit methods only using the heap.
+   * </p>
+   * <p>
+   *   The following methods are never invoked by this walker:
+   * </p>
+   * <ul>
+   *   <li>{@link ParseTreeListener#enterEveryRule(ParserRuleContext)}</li>
+   *   <li>{@link ParseTreeListener#exitEveryRule(ParserRuleContext)}</li>
+   *   <li>{@link ParseTreeListener#visitTerminal(TerminalNode)}</li>
+   *   <li>{@link ParseTreeListener#visitErrorNode(ErrorNode)}</li>
+   * </ul>
+   *
+   * @since 0.2.0
+   */
+  WALK_ENTER_AND_EXIT_RULES_HEAP {
+    @Override
+    public void walk(@NotNull ParseTreeListener listener, @NotNull ParserRuleContext parserRuleContext) {
+      walkEnterAndExitsOnlyIterative(listener, parserRuleContext);
     }
   };
 
 
-  public abstract void walk(@NotNull ParseTreeListener listener,
-                            @NotNull ParserRuleContext parserRuleContext);
+  public abstract void walk(@NotNull ParseTreeListener listener, @NotNull ParserRuleContext parserRuleContext);
 }
