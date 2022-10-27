@@ -52,7 +52,7 @@ public abstract class AbstractAntlr4Parser
 
 
   @Contract(mutates = "param1")
-  protected <L extends Lexer & ParserInputSupplier,P extends Parser,C extends ParserRuleContext,R>
+  protected <L extends TokenSource & ParserInputSupplier,P extends Parser,C extends ParserRuleContext,R>
       R parse(@NotNull L lexer, @NotNull Function<L,P> parserSupplier, @NotNull Function<P,C> ruleExecutor,
               @NotNull ParseTreeListener listener, @NotNull Function<C,R> contextResultExtractor) {
     return contextResultExtractor.apply(walk(listener, parse(lexer, parserSupplier, ruleExecutor)));
@@ -60,7 +60,7 @@ public abstract class AbstractAntlr4Parser
 
 
   @Contract(value = "_, _, _ -> new", mutates = "param1")
-  protected <L extends Lexer & ParserInputSupplier,P extends Parser,C extends ParserRuleContext>
+  protected <L extends TokenSource & ParserInputSupplier,P extends Parser,C extends ParserRuleContext>
       @NotNull C parse(@NotNull L lexer, @NotNull Function<L,P> parserSupplier, @NotNull Function<P,C> ruleExecutor)
   {
     val errorListener = new BaseErrorListener() {
@@ -73,8 +73,13 @@ public abstract class AbstractAntlr4Parser
       }
     };
 
-    lexer.removeErrorListener(ConsoleErrorListener.INSTANCE);  // console polluter
-    lexer.addErrorListener(errorListener);
+    if (lexer instanceof Lexer)
+    {
+      val antlr4Lexer = (Lexer)lexer;
+
+      antlr4Lexer.removeErrorListener(ConsoleErrorListener.INSTANCE);  // console polluter
+      antlr4Lexer.addErrorListener(errorListener);
+    }
 
     val parser = parserSupplier.apply(lexer);
 
