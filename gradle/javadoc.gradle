@@ -26,6 +26,8 @@ javadoc {
     group("ANTLR4 Runtime API", ["de.sayayi.lib.antlr4"])
 
     noQualifiers 'java.util', 'java.lang'
+
+    addStringOption('Xdoclint:-missing', '-quiet')
   }
 
   failOnError false
