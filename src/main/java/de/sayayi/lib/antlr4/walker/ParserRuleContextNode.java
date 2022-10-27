@@ -29,8 +29,8 @@ import org.jetbrains.annotations.NotNull;
 final class ParserRuleContextNode
 {
   final @NotNull ParserRuleContext parserRuleContext;
-  private final short childCount;
-  private short index;
+  private final int childCount;
+  private int index;
 
 
   ParserRuleContextNode(@NotNull ParserRuleContext parserRuleContext)
@@ -39,7 +39,7 @@ final class ParserRuleContextNode
 
     val childList = parserRuleContext.children;
 
-    childCount = childList == null ? 0 : (short)childList.size();
+    childCount = childList == null ? 0 : childList.size();
     index = 0;
   }
 
