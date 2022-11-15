@@ -117,7 +117,6 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
   }
 
 
-
   @Contract(pure = true)
   private char[] getLineCharacters(@NotNull String line)
   {
@@ -152,7 +151,8 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
 
 
   @Contract(pure = true)
-  protected @NotNull String formatForMissingTokenLocation(@NotNull String errorMsg, RecognitionException ex) {
+  protected @NotNull String formatForMissingTokenLocation(@NotNull String errorMsg,
+                                                          @SuppressWarnings("unused") RecognitionException ex) {
     return errorMsg;
   }
 
