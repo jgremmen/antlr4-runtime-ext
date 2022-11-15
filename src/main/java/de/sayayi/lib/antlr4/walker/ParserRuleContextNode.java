@@ -48,4 +48,10 @@ final class ParserRuleContextNode
   ParseTree getNextChild() {
     return index < childCount ? parserRuleContext.children.get(index++) : null;
   }
+
+
+  @Contract(pure = true)
+  boolean isFirst() {
+    return index == 0;
+  }
 }

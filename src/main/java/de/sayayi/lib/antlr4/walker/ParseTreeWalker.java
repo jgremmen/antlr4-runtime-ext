@@ -108,11 +108,11 @@ final class ParseTreeWalker
     val nodeStack = new ArrayDeque<ParserRuleContextNode>();
     nodeStack.addFirst(new ParserRuleContextNode(parserRuleContext));
 
-    parserRuleContext.enterRule(listener);
-
     for(ParseTree childNode; !nodeStack.isEmpty();)
     {
       val parentNode = nodeStack.peekFirst();
+      if (parentNode.isFirst())
+        parentNode.parserRuleContext.enterRule(listener);
 
       if ((childNode = parentNode.getNextChild()) == null)
       {
@@ -120,12 +120,7 @@ final class ParseTreeWalker
         nodeStack.pollFirst();
       }
       else if (childNode instanceof ParserRuleContext)
-      {
-        val childNodeContext = (ParserRuleContext)childNode;
-        childNodeContext.enterRule(listener);
-
-        nodeStack.push(new ParserRuleContextNode(childNodeContext));
-      }
+        nodeStack.addFirst(new ParserRuleContextNode((ParserRuleContext)childNode));
     }
   }
 
