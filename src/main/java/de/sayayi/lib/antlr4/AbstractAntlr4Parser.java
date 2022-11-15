@@ -15,12 +15,14 @@
  */
 package de.sayayi.lib.antlr4;
 
+import de.sayayi.lib.antlr4.syntax.GenericSyntaxErrorFormatter;
+import de.sayayi.lib.antlr4.syntax.SyntaxErrorFormatter;
 import de.sayayi.lib.antlr4.walker.Walker;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.val;
-import lombok.var;
 import org.antlr.v4.runtime.*;
+import org.antlr.v4.runtime.misc.Interval;
 import org.antlr.v4.runtime.tree.ParseTreeListener;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.jetbrains.annotations.Contract;
@@ -29,8 +31,6 @@ import org.jetbrains.annotations.NotNull;
 import java.util.function.Function;
 
 import static de.sayayi.lib.antlr4.walker.Walker.WALK_FULL_RECURSIVE;
-import static java.lang.Character.isSpaceChar;
-import static java.util.Arrays.fill;
 import static java.util.Objects.requireNonNull;
 import static lombok.AccessLevel.PRIVATE;
 import static lombok.AccessLevel.PROTECTED;
@@ -47,12 +47,12 @@ public abstract class AbstractAntlr4Parser
 
 
   protected AbstractAntlr4Parser() {
-    this(DefaultSyntaxErrorFormatter.INSTANCE);
+    this(new GenericSyntaxErrorFormatter(8, 0, 0));
   }
 
 
   @Contract(mutates = "param1")
-  protected <L extends TokenSource & ParserInputSupplier,P extends Parser,C extends ParserRuleContext,R>
+  protected <L extends TokenSource,P extends Parser,C extends ParserRuleContext,R>
       R parse(@NotNull L lexer, @NotNull Function<L,P> parserSupplier, @NotNull Function<P,C> ruleExecutor,
               @NotNull ParseTreeListener listener, @NotNull Function<C,R> contextResultExtractor) {
     return contextResultExtractor.apply(walk(listener, parse(lexer, parserSupplier, ruleExecutor)));
@@ -60,16 +60,14 @@ public abstract class AbstractAntlr4Parser
 
 
   @Contract(value = "_, _, _ -> new", mutates = "param1")
-  protected <L extends TokenSource & ParserInputSupplier,P extends Parser,C extends ParserRuleContext>
+  protected <L extends TokenSource,P extends Parser,C extends ParserRuleContext>
       @NotNull C parse(@NotNull L lexer, @NotNull Function<L,P> parserSupplier, @NotNull Function<P,C> ruleExecutor)
   {
     val errorListener = new BaseErrorListener() {
       @Override
       public void syntaxError(@NotNull Recognizer<?,?> recognizer, Object offendingSymbol, int line,
-                              int charPositionInLine, String msg, RecognitionException ex)
-      {
-        AbstractAntlr4Parser.this.syntaxError(lexer.getParserInput(), recognizer, (Token)offendingSymbol,
-            line, charPositionInLine, msg, ex);
+                              int charPositionInLine, String msg, RecognitionException ex) {
+        AbstractAntlr4Parser.this.syntaxError(recognizer, (Token)offendingSymbol, line, charPositionInLine, msg, ex);
       }
     };
 
@@ -101,18 +99,20 @@ public abstract class AbstractAntlr4Parser
   }
 
 
-  @Contract("_, _, _, _, _, _, _ -> fail")
-  private void syntaxError(@NotNull String parserInput, @NotNull Recognizer<?,?> recognizer,
-                           Token offendingSymbol, int line, int charPositionInLine,
-                           String msg, RecognitionException ex)
+  @Contract("_, _, _, _, _, _ -> fail")
+  private void syntaxError(@NotNull Recognizer<?,?> recognizer, Token offendingSymbol,
+                           int line, int charPositionInLine, String msg, RecognitionException ex)
   {
     if (offendingSymbol == null && recognizer instanceof Lexer)
     {
-      val inputStream = ((Lexer)recognizer).getInputStream();
-      offendingSymbol = new PositionToken(line, charPositionInLine, inputStream.index(), inputStream);
+      val lexer = (Lexer)recognizer;
+      val inputStream = lexer.getInputStream();
+
+      offendingSymbol = new PositionToken(line, charPositionInLine,
+          lexer._tokenStartCharIndex, inputStream.index(), inputStream);
     }
 
-    syntaxError(parserInput, analyseStartStopToken(offendingSymbol, ex), msg, ex);
+    syntaxError(analyseStartStopToken(offendingSymbol, ex), msg, ex);
   }
 
 
@@ -137,51 +137,39 @@ public abstract class AbstractAntlr4Parser
   }
 
 
-  @Contract("_, _, _ -> fail")
-  protected void syntaxError(@NotNull String parserInput, @NotNull ParserRuleContext ctx,
-                             @NotNull String errorMsg) {
-    syntaxError(parserInput, new Token[] { ctx.getStart(), ctx.getStop() }, errorMsg, null);
+  @Contract("_, _ -> fail")
+  protected void syntaxError(@NotNull ParserRuleContext ctx, @NotNull String errorMsg) {
+    syntaxError(new Token[] { ctx.getStart(), ctx.getStop() }, errorMsg, null);
+  }
+
+
+  @Contract("_, _ -> fail")
+  protected void syntaxError(@NotNull TerminalNode terminalNode, @NotNull String errorMsg) {
+    syntaxError(terminalNode.getSymbol(), errorMsg);
+  }
+
+
+  @Contract("_, _ -> fail")
+  protected void syntaxError(@NotNull Token token, @NotNull String errorMsg) {
+    syntaxError(new Token[] { token, token }, errorMsg, null);
   }
 
 
   @Contract("_, _, _ -> fail")
-  protected void syntaxError(@NotNull String parserInput, @NotNull TerminalNode terminalNode,
-                             @NotNull String errorMsg) {
-    syntaxError(parserInput, terminalNode.getSymbol(), errorMsg);
-  }
-
-
-  @Contract("_, _, _ -> fail")
-  protected void syntaxError(@NotNull String parserInput, @NotNull Token token, @NotNull String errorMsg) {
-    syntaxError(parserInput, new Token[] { token, token }, errorMsg, null);
-  }
-
-
-  @Contract("_, _, _, _ -> fail")
-  private void syntaxError(@NotNull String parserInput, @NotNull Token[] startStopToken,
-                           @NotNull String errorMsg, RecognitionException ex)
+  private void syntaxError(@NotNull Token[] startStopToken, @NotNull String errorMsg, RecognitionException ex)
   {
     val startToken = startStopToken[0];
     val stopToken = startStopToken[1];
 
-    throw createException(parserInput, startToken, stopToken,
-        syntaxErrorFormatter.format(parserInput, startToken, stopToken, errorMsg, ex), errorMsg, ex);
+    throw createException(startToken, stopToken,
+        syntaxErrorFormatter.format(startToken, stopToken, errorMsg, ex), errorMsg, ex);
   }
 
 
-  @Contract("_, _, _, _, _, _ -> new")
+  @Contract("_, _, _, _, _ -> new")
   protected abstract @NotNull RuntimeException createException(
-      @NotNull String parserInput, @NotNull Token startToken, @NotNull Token stopToken,
-      @NotNull String formattedMessage, @NotNull String errorMsg, RecognitionException ex);
-
-
-
-
-  public interface ParserInputSupplier
-  {
-    @Contract(pure = true)
-    @NotNull String getParserInput();
-  }
+      @NotNull Token startToken, @NotNull Token stopToken, @NotNull String formattedMessage,
+      @NotNull String errorMsg, RecognitionException ex);
 
 
 
@@ -202,6 +190,7 @@ public abstract class AbstractAntlr4Parser
   private static final class PositionToken implements Token
   {
     private final int line;
+    private final int charPositionInLine;
     private final int startIndex;
     private final int stopIndex;
     private final CharStream inputStream;
@@ -209,7 +198,7 @@ public abstract class AbstractAntlr4Parser
 
     @Override
     public String getText() {
-      return null;
+      return inputStream.getText(new Interval(startIndex, stopIndex));
     }
 
 
@@ -220,14 +209,8 @@ public abstract class AbstractAntlr4Parser
 
 
     @Override
-    public int getCharPositionInLine() {
-      return startIndex;
-    }
-
-
-    @Override
     public int getChannel() {
-      return Token.DEFAULT_CHANNEL;
+      return DEFAULT_CHANNEL;
     }
 
 
@@ -240,100 +223,6 @@ public abstract class AbstractAntlr4Parser
     @Override
     public TokenSource getTokenSource() {
       return null;
-    }
-  }
-
-
-
-
-  private enum DefaultSyntaxErrorFormatter implements SyntaxErrorFormatter
-  {
-    INSTANCE;
-
-
-    @Override
-    public @NotNull String format(@NotNull String parserInput, @NotNull Token startToken,
-                                  @NotNull Token stopToken, @NotNull String errorMsg, RecognitionException ex)
-    {
-      val lines = parserInput.split("\r?\n");
-
-      return lines.length == 1
-          ? syntaxErrorSingleLine(errorMsg, parserInput, startToken, stopToken)
-          : syntaxErrorMultiLine(errorMsg, lines, startToken, stopToken);
-    }
-
-
-    @Contract(pure = true)
-    private @NotNull String syntaxErrorSingleLine(@NotNull String errorMsg, @NotNull String compilerInput,
-                                                  @NotNull Token startToken, @NotNull Token stopToken)
-    {
-      val startIndex = startToken.getStartIndex();
-      val stopIndex = stopToken.getStopIndex();
-      val marker = new char[stopIndex + 1];
-
-      fill(marker, 0, startIndex, ' ');  // leading spaces
-      fill(marker, startIndex, stopIndex + 1, '^');  // marker
-
-      return errorMsg + ":\n" + compilerInput + '\n' + trimRight(String.valueOf(marker));
-    }
-
-
-    @Contract(pure = true)
-    private @NotNull String syntaxErrorMultiLine(@NotNull String errorMsg, @NotNull String[] lines,
-                                                 @NotNull Token startToken, @NotNull Token stopToken)
-    {
-      val text = new StringBuilder(errorMsg).append(":\n");
-
-      val lineStart = startToken.getLine();
-      val colStart = startToken.getStartIndex();
-      val lineStop = stopToken.getLine();
-      val colStop = stopToken.getStopIndex();
-
-      val lineCount = lines.length;
-      val format = lineCount >= 100 ? " %03d: " : lineCount >= 10 ? " %02d: " : " %1d: ";
-
-      for(int n = 1; n <= lineCount; n++)
-      {
-        val line = trimRight(lines[n - 1]);
-        val lineLength = line.length();
-        val lineNumber = String.format(format, n);
-
-        text.append(lineNumber).append(line).append('\n');
-
-        if (n >= lineStart && n <= lineStop && lineLength > 0)
-        {
-          var nonSpace = false;
-
-          for(int c = -lineNumber.length(); c < lineLength; c++)
-          {
-            if ((lineStart == n && c < colStart) || (lineStop == n && c > colStop) || c < 0)
-              text.append(' ');
-            else
-            {
-              nonSpace |= !isSpaceChar(line.charAt(c));
-
-              text.append(nonSpace ? '^' : ' ');
-            }
-          }
-
-          text.append('\n');
-        }
-      }
-
-      return trimRight(text.toString());
-    }
-
-
-    @Contract(pure = true)
-    private @NotNull String trimRight(@NotNull String s)
-    {
-      val chars = s.toCharArray();
-      int len = chars.length;
-
-      while(len > 0 && chars[len - 1] <= ' ')
-        len--;
-
-      return len < chars.length ? new String(chars, 0, len) : s;
     }
   }
 }

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.sayayi.lib.antlr4;
+package de.sayayi.lib.antlr4.syntax;
 
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Token;
@@ -28,6 +28,6 @@ import org.jetbrains.annotations.NotNull;
 public interface SyntaxErrorFormatter
 {
   @Contract(pure = true)
-  @NotNull String format(@NotNull String parserInput, @NotNull Token startToken, @NotNull Token stopToken,
+  @NotNull String format(@NotNull Token startToken, @NotNull Token stopToken,
                          @NotNull String errorMsg, RecognitionException ex);
 }
