@@ -25,7 +25,6 @@ import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 class GenericSyntaxErrorFormatterTest
 {
   private CharStream inputStream;
-  private String parserInput;
 
 
   @BeforeAll
@@ -33,7 +32,6 @@ class GenericSyntaxErrorFormatterTest
   {
     inputStream = fromStream(requireNonNull(
         getClass().getResourceAsStream("/de/sayayi/lib/antlr4/lorem-ipsum.txt")));
-    parserInput = inputStream.toString();
   }
 
 
@@ -64,6 +62,25 @@ class GenericSyntaxErrorFormatterTest
         " 2: ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo\n" +
         "       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n" +
         " 3: dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor\n", msg);
+  }
+
+
+  @Test
+  void format3LineWithContext()
+  {
+    val formatter = new GenericSyntaxErrorFormatter(8, 1, 1);
+    val msg = formatter.format(
+        createTokenWithLocation(586, 589, 7, 16),
+        createTokenWithLocation(615, 618, 9, 22), "Error", null);
+
+    assertEquals("Error:\n" +
+        " 06: justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem\n" +
+        " 07: ipsum dolor sit amet.\n" +
+        "                     ^^^^^\n" +
+        " 08: \n" +
+        " 09: Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt\n" +
+        "     ^^^^^^^^^^^^^^^^^^^^^^^^^^\n" +
+        " 10: ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo\n", msg);
   }
 
 

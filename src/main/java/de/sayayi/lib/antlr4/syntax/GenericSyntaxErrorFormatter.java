@@ -65,14 +65,15 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
 
     val startLocation = startStopLocation[0];
     var stopLocation = startStopLocation[1];
-
-    val lines = inputStream.getText(Interval.of(0, inputStream.size() - 1)).split("\r?\n");
-    val lineFormat = getLineFormat(lines.length, startToken, stopToken);
-    val lineFormatLength = String.format(lineFormat, 1).length();
-
     val startLocationLine0 = startLocation.line - 1;
     val stopLocationLine0 = stopLocation.line - 1;
+
+    val lines = inputStream.getText(Interval.of(0, inputStream.size() - 1)).split("\r?\n");
     val stopLine = min(stopLocationLine0 + showLinesAfter, lines.length - 1);
+
+    val lineFormat = getLineFormat(lines.length, stopLine + 1);
+    val lineFormatLength = String.format(lineFormat, 1).length();
+
     val text = new StringBuilder(errorMsg).append(":\n");
 
     for(int l = max(startLocationLine0 - showLinesBefore, 0); l <= stopLine; l++)
@@ -157,8 +158,8 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
 
 
   @Contract(pure = true)
-  protected @NotNull String getLineFormat(int lines, @NotNull Token startToken, @NotNull Token stopToken) {
-    return lines == 1 ? " " : (" %0" + (int)ceil(log10(stopToken.getLine() + 1.0)) + "d: ");
+  protected @NotNull String getLineFormat(int lines, int stopLine) {
+    return lines == 1 ? " " : (" %0" + (int)ceil(log10(stopLine + 1.0)) + "d: ");
   }
 
 
