@@ -15,8 +15,6 @@
  */
 package de.sayayi.lib.antlr4.walker;
 
-import lombok.NoArgsConstructor;
-import lombok.val;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.IterativeParseTreeWalker;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -25,28 +23,33 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayDeque;
-
-import static lombok.AccessLevel.PRIVATE;
+import java.util.Deque;
+import java.util.List;
 
 
 /**
  * @author Jeroen Gremmen
  * @since 0.1.0
  */
-@NoArgsConstructor(access = PRIVATE)
+@SuppressWarnings("UnstableApiUsage")
 final class ParseTreeWalker
 {
   private static final IterativeParseTreeWalker FULL_HEAP_WALKER = new IterativeParseTreeWalker();
+
+
+  private ParseTreeWalker() {
+    // no instance
+  }
 
 
   @Contract(mutates = "param2")
   static void walkExitsOnlyRecursive(@NotNull ParseTreeListener listener,
                                      @NotNull ParserRuleContext parserRuleContext)
   {
-    val children = parserRuleContext.children;
+    final List<ParseTree> children = parserRuleContext.children;
     if (children != null)
     {
-      for(val parseTreeChild: children)
+      for(final ParseTree parseTreeChild: children)
         if (parseTreeChild instanceof ParserRuleContext)
           walkExitsOnlyRecursive(listener, (ParserRuleContext)parseTreeChild);
     }
@@ -62,12 +65,12 @@ final class ParseTreeWalker
   static void walkExitsOnlyIterative(@NotNull ParseTreeListener listener,
                                      @NotNull ParserRuleContext parserRuleContext)
   {
-    val nodeStack = new ArrayDeque<ParserRuleContextNode>();
+    final Deque<ParserRuleContextNode> nodeStack = new ArrayDeque<>();
     nodeStack.addFirst(new ParserRuleContextNode(parserRuleContext));
 
     for(ParseTree childNode; !nodeStack.isEmpty();)
     {
-      val parentNode = nodeStack.peekFirst();
+      final ParserRuleContextNode parentNode = nodeStack.peekFirst();
 
       if ((childNode = parentNode.getNextChild()) == null)
       {
@@ -86,10 +89,10 @@ final class ParseTreeWalker
   {
     parserRuleContext.enterRule(listener);
 
-    val children = parserRuleContext.children;
+    final List<ParseTree> children = parserRuleContext.children;
     if (children != null)
     {
-      for(val parseTreeChild: children)
+      for(final ParseTree parseTreeChild: children)
         if (parseTreeChild instanceof ParserRuleContext)
           walkEnterAndExitsOnlyRecursive(listener, (ParserRuleContext)parseTreeChild);
     }
@@ -105,12 +108,12 @@ final class ParseTreeWalker
   static void walkEnterAndExitsOnlyIterative(@NotNull ParseTreeListener listener,
                                              @NotNull ParserRuleContext parserRuleContext)
   {
-    val nodeStack = new ArrayDeque<ParserRuleContextNode>();
+    final Deque<ParserRuleContextNode> nodeStack = new ArrayDeque<>();
     nodeStack.addFirst(new ParserRuleContextNode(parserRuleContext));
 
     for(ParseTree childNode; !nodeStack.isEmpty();)
     {
-      val parentNode = nodeStack.peekFirst();
+      final ParserRuleContextNode parentNode = nodeStack.peekFirst();
       if (parentNode.isFirst())
         parentNode.parserRuleContext.enterRule(listener);
 

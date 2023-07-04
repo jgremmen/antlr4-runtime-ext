@@ -18,9 +18,6 @@ package de.sayayi.lib.antlr4;
 import de.sayayi.lib.antlr4.syntax.GenericSyntaxErrorFormatter;
 import de.sayayi.lib.antlr4.syntax.SyntaxErrorFormatter;
 import de.sayayi.lib.antlr4.walker.Walker;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.val;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.misc.Interval;
 import org.antlr.v4.runtime.tree.ParseTreeListener;
@@ -32,15 +29,13 @@ import java.util.function.Function;
 
 import static de.sayayi.lib.antlr4.walker.Walker.WALK_FULL_RECURSIVE;
 import static java.util.Objects.requireNonNull;
-import static lombok.AccessLevel.PRIVATE;
-import static lombok.AccessLevel.PROTECTED;
 
 
 /**
  * @author Jeroen Gremmen
  * @since 0.1.0
  */
-@RequiredArgsConstructor(access = PROTECTED)
+@SuppressWarnings("UnstableApiUsage")
 public abstract class AbstractAntlr4Parser
 {
   private final SyntaxErrorFormatter syntaxErrorFormatter;
@@ -48,6 +43,11 @@ public abstract class AbstractAntlr4Parser
 
   protected AbstractAntlr4Parser() {
     this(new GenericSyntaxErrorFormatter(8, 0, 0));
+  }
+
+
+  protected AbstractAntlr4Parser(@NotNull SyntaxErrorFormatter syntaxErrorFormatter) {
+    this.syntaxErrorFormatter = syntaxErrorFormatter;
   }
 
 
@@ -61,25 +61,28 @@ public abstract class AbstractAntlr4Parser
 
   @Contract(value = "_, _, _ -> new", mutates = "param1")
   protected <L extends TokenSource,P extends Parser,C extends ParserRuleContext>
-      @NotNull C parse(@NotNull L lexer, @NotNull Function<L,P> parserSupplier, @NotNull Function<P,C> ruleExecutor)
+      @NotNull C parse(@NotNull L lexer, @NotNull Function<L,P> parserSupplier,
+                       @NotNull Function<P,C> ruleExecutor)
   {
-    val errorListener = new BaseErrorListener() {
+    final ANTLRErrorListener errorListener = new BaseErrorListener() {
       @Override
       public void syntaxError(@NotNull Recognizer<?,?> recognizer, Object offendingSymbol, int line,
-                              int charPositionInLine, String msg, RecognitionException ex) {
-        AbstractAntlr4Parser.this.syntaxError(recognizer, (Token)offendingSymbol, line, charPositionInLine, msg, ex);
+                              int charPositionInLine, String msg, RecognitionException ex)
+      {
+        AbstractAntlr4Parser.this.syntaxError(recognizer, (Token)offendingSymbol, line,
+            charPositionInLine, msg, ex);
       }
     };
 
     if (lexer instanceof Lexer)
     {
-      val antlr4Lexer = (Lexer)lexer;
+      final Lexer antlr4Lexer = (Lexer)lexer;
 
       antlr4Lexer.removeErrorListener(ConsoleErrorListener.INSTANCE);  // console polluter
       antlr4Lexer.addErrorListener(errorListener);
     }
 
-    val parser = parserSupplier.apply(lexer);
+    final P parser = parserSupplier.apply(lexer);
 
     parser.removeErrorListener(ConsoleErrorListener.INSTANCE);  // console polluter
     parser.addErrorListener(errorListener);
@@ -92,7 +95,9 @@ public abstract class AbstractAntlr4Parser
   private <C extends ParserRuleContext>
       @NotNull C walk(@NotNull ParseTreeListener listener, @NotNull C parserRuleContext)
   {
-    (listener instanceof WalkerSupplier ? ((WalkerSupplier)listener).getWalker() : WALK_FULL_RECURSIVE)
+    (listener instanceof WalkerSupplier
+        ? ((WalkerSupplier)listener).getWalker()
+        : WALK_FULL_RECURSIVE)
         .walk(listener, parserRuleContext);
 
     return parserRuleContext;
@@ -105,8 +110,8 @@ public abstract class AbstractAntlr4Parser
   {
     if (offendingSymbol == null && recognizer instanceof Lexer)
     {
-      val lexer = (Lexer)recognizer;
-      val inputStream = lexer.getInputStream();
+      final Lexer lexer = (Lexer)recognizer;
+      final CharStream inputStream = lexer.getInputStream();
 
       offendingSymbol = new PositionToken(line, charPositionInLine,
           lexer._tokenStartCharIndex, inputStream.index(), inputStream);
@@ -121,14 +126,14 @@ public abstract class AbstractAntlr4Parser
   {
     if (ex != null)
     {
-      val offendingToken = ex.getOffendingToken();
+      final Token offendingToken = ex.getOffendingToken();
       if (offendingToken != null)
         return new Token[] { offendingToken, offendingToken };
 
-      val ctx = ex.getCtx();
+      final RuleContext ctx = ex.getCtx();
       if (ctx instanceof ParserRuleContext)
       {
-        val parserRuleContext = (ParserRuleContext)ctx;
+        final ParserRuleContext parserRuleContext = (ParserRuleContext)ctx;
         return new Token[] { parserRuleContext.getStart(), parserRuleContext.getStop() };
       }
     }
@@ -158,8 +163,8 @@ public abstract class AbstractAntlr4Parser
   @Contract("_, _, _ -> fail")
   private void syntaxError(@NotNull Token[] startStopToken, @NotNull String errorMsg, RecognitionException ex)
   {
-    val startToken = startStopToken[0];
-    val stopToken = startStopToken[1];
+    final Token startToken = startStopToken[0];
+    final Token stopToken = startStopToken[1];
 
     throw createException(startToken, stopToken,
         syntaxErrorFormatter.format(startToken, stopToken, errorMsg, ex), errorMsg, ex);
@@ -185,8 +190,6 @@ public abstract class AbstractAntlr4Parser
 
 
 
-  @RequiredArgsConstructor(access = PRIVATE)
-  @Getter
   private static final class PositionToken implements Token
   {
     private final int line;
@@ -194,6 +197,47 @@ public abstract class AbstractAntlr4Parser
     private final int startIndex;
     private final int stopIndex;
     private final CharStream inputStream;
+
+
+    public PositionToken(int line, int charPositionInLine, int startIndex, int stopIndex,
+                         @NotNull CharStream inputStream)
+    {
+      this.line = line;
+      this.charPositionInLine = charPositionInLine;
+      this.startIndex = startIndex;
+      this.stopIndex = stopIndex;
+      this.inputStream = inputStream;
+    }
+
+
+    @Override
+    public int getLine() {
+      return line;
+    }
+
+
+    @Override
+    public int getCharPositionInLine() {
+      return charPositionInLine;
+    }
+
+
+    @Override
+    public int getStartIndex() {
+      return startIndex;
+    }
+
+
+    @Override
+    public int getStopIndex() {
+      return stopIndex;
+    }
+
+
+    @Override
+    public CharStream getInputStream() {
+      return inputStream;
+    }
 
 
     @Override

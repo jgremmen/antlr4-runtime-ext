@@ -17,10 +17,6 @@ package de.sayayi.lib.antlr4;
 
 import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.Vocabulary;
-
-import lombok.AllArgsConstructor;
-import lombok.val;
-
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -29,7 +25,6 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import static java.util.stream.Collectors.joining;
-import static lombok.AccessLevel.PRIVATE;
 
 
 /**
@@ -38,6 +33,7 @@ import static lombok.AccessLevel.PRIVATE;
  * @author Jeroen Gremmen
  * @since 0.1.0
  */
+@SuppressWarnings("UnstableApiUsage")
 public abstract class AbstractVocabulary implements Vocabulary
 {
   private final SortedMap<Integer,Name> vocabulary = new TreeMap<>();
@@ -95,17 +91,23 @@ public abstract class AbstractVocabulary implements Vocabulary
 
   private @NotNull String toString_entry(@NotNull Entry<Integer,Name> entry)
   {
-    val name = entry.getValue();
+    final Name name = entry.getValue();
     return "{token=" + entry.getKey() + ",literal=" + name.literal + ",symbol=" + name.symbol + '}';
   }
 
 
 
 
-  @AllArgsConstructor(access = PRIVATE)
   private static final class Name
   {
     final String literal;
     final String symbol;
+
+
+    private Name(@NotNull String literal, @NotNull String symbol)
+    {
+      this.literal = literal;
+      this.symbol = symbol;
+    }
   }
 }

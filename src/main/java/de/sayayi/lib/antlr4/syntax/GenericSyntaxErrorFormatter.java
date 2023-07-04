@@ -15,10 +15,7 @@
  */
 package de.sayayi.lib.antlr4.syntax;
 
-import lombok.NoArgsConstructor;
-import lombok.ToString;
-import lombok.val;
-import lombok.var;
+import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.misc.Interval;
@@ -28,7 +25,6 @@ import org.jetbrains.annotations.NotNull;
 import static java.lang.Character.isSpaceChar;
 import static java.lang.Math.*;
 import static java.util.Arrays.fill;
-import static lombok.AccessLevel.PRIVATE;
 
 
 /**
@@ -57,30 +53,32 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
   public @NotNull String format(@NotNull Token startToken, @NotNull Token stopToken,
                                 @NotNull String errorMsg, RecognitionException ex)
   {
-    val inputStream = startToken.getInputStream();
-    val startStopLocation = getStartStopLocation(startToken, stopToken);
+    final CharStream inputStream = startToken.getInputStream();
+    final Location[] startStopLocation = getStartStopLocation(startToken, stopToken);
 
     if (startStopLocation == null || inputStream == null)
       return formatForMissingTokenLocation(errorMsg, ex);
 
-    val startLocation = startStopLocation[0];
-    var stopLocation = startStopLocation[1];
-    val startLocationLine0 = startLocation.line - 1;
-    val stopLocationLine0 = stopLocation.line - 1;
+    final Location startLocation = startStopLocation[0];
+    Location stopLocation = startStopLocation[1];
+    final int startLocationLine0 = startLocation.line - 1;
+    final int stopLocationLine0 = stopLocation.line - 1;
 
-    val lines = inputStream.getText(Interval.of(0, inputStream.size() - 1)).split("\r?\n");
-    val stopLine = min(stopLocationLine0 + showLinesAfter, lines.length - 1);
+    final String[] lines = inputStream
+        .getText(Interval.of(0, inputStream.size() - 1))
+        .split("\r?\n");
+    final int stopLine = min(stopLocationLine0 + showLinesAfter, lines.length - 1);
 
-    val lineFormat = getLineFormat(lines.length, stopLine + 1);
-    val lineFormatLength = String.format(lineFormat, 1).length();
+    final String lineFormat = getLineFormat(lines.length, stopLine + 1);
+    final int lineFormatLength = String.format(lineFormat, 1).length();
 
-    val text = new StringBuilder(errorMsg).append(":\n");
+    final StringBuilder text = new StringBuilder(errorMsg).append(":\n");
 
     for(int l = max(startLocationLine0 - showLinesBefore, 0); l <= stopLine; l++)
     {
-      val line = lines[l];
-      val lineChars = getLineCharacters(line);
-      var lineLength = lineChars.length;
+      final String line = lines[l];
+      final char[] lineChars = getLineCharacters(line);
+      int lineLength = lineChars.length;
 
       text.append(String.format(lineFormat, l + 1)).append(lineChars).append('\n');
 
@@ -92,8 +90,8 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
         if (stopLocationLine0 == l)
           lineLength = max(adjustLocation(lineChars, stopLocation.charPositionInLine) + 1, lineLength);
 
-        var printMarker = false;
-        val marker = getMarker();
+        boolean printMarker = false;
+        final char marker = getMarker();
 
         for(int c = -lineFormatLength;
             c < lineLength && !(stopLocationLine0 == l && c > stopLocation.charPositionInLine);
@@ -120,7 +118,7 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
   @Contract(pure = true)
   private char[] getLineCharacters(@NotNull String line)
   {
-    val s = new StringBuilder();
+    final StringBuilder s = new StringBuilder();
 
     line = trimRight(line);
 
@@ -128,14 +126,14 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
       s.append(line);
     else
     {
-      var p = 0;
-      val spaces = new char[tabSize];
+      int p = 0;
+      final char[] spaces = new char[tabSize];
       fill(spaces, ' ');
 
-      for(val ch: line.toCharArray())
+      for(char ch: line.toCharArray())
         if (ch == '\t')
         {
-          val spacesToAdd = tabSize - (p % tabSize);
+          final int spacesToAdd = tabSize - (p % tabSize);
           s.append(spaces, 0, spacesToAdd);
           p += spacesToAdd;
         }
@@ -181,8 +179,8 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
   @Contract(pure = true)
   private Location[] getStartStopLocation(@NotNull Token startToken, @NotNull Token stopToken)
   {
-    var startLocation = getStartLocation(startToken);
-    var stopLocation = getStopLocation(stopToken);
+    Location startLocation = getStartLocation(startToken);
+    Location stopLocation = getStopLocation(stopToken);
 
     if (!startLocation.isValid() && !stopLocation.isValid())
       return null;
@@ -205,20 +203,21 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
   @Contract(pure = true)
   protected @NotNull Location getStopLocation(@NotNull Token stopToken)
   {
-    val endLocation = new Location(stopToken);
+    final Location endLocation = new Location(stopToken);
 
     if (stopToken.getType() != Token.EOF)
     {
-      val text = stopToken.getInputStream()
+      final String text = stopToken
+          .getInputStream()
           .getText(new Interval(stopToken.getStartIndex(), stopToken.getStopIndex()));
 
       if (!text.isEmpty())
       {
-        val chars = text.toCharArray();
+        final char[] chars = text.toCharArray();
 
         for(int n = 0, l = chars.length - 1; n < l; n++)
         {
-          val c = chars[n];
+          final char c = chars[n];
           if (c != '\r')
           {
             if (c == '\n')
@@ -246,7 +245,7 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
   @Contract(pure = true)
   private @NotNull String trimRight(@NotNull String s)
   {
-    val chars = s.toCharArray();
+    final char[] chars = s.toCharArray();
     int len = chars.length;
 
     while(len > 0 && chars[len - 1] <= ' ')
@@ -258,12 +257,9 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
 
 
 
-  @ToString(doNotUseGetters = true)
-  @NoArgsConstructor(access = PRIVATE)
   private static final class Location implements Comparable<Location>
   {
     int line;
-    @ToString.Include(name = "pos")
     int charPositionInLine;
 
 
@@ -284,6 +280,12 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
     {
       return line < location.line ? -1 : line > location.line ? 1 :
           Integer.compare(charPositionInLine, location.charPositionInLine);
+    }
+
+
+    @Override
+    public String toString() {
+      return "Location(pos=" + charPositionInLine + ')';
     }
   }
 }

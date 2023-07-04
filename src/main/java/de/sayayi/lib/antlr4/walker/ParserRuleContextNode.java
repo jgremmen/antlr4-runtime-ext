@@ -15,17 +15,19 @@
  */
 package de.sayayi.lib.antlr4.walker;
 
-import lombok.val;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.List;
 
 
 /**
  * @author Jeroen Gremmen
  * @since 0.2.0
  */
+@SuppressWarnings("UnstableApiUsage")
 final class ParserRuleContextNode
 {
   final @NotNull ParserRuleContext parserRuleContext;
@@ -37,7 +39,7 @@ final class ParserRuleContextNode
   {
     this.parserRuleContext = parserRuleContext;
 
-    val childList = parserRuleContext.children;
+    final List<ParseTree> childList = parserRuleContext.children;
 
     childCount = childList == null ? 0 : childList.size();
     index = 0;
