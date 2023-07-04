@@ -22,11 +22,27 @@ import org.jetbrains.annotations.NotNull;
 
 
 /**
+ * Interface for formatting syntax error messages based on detailed lexer/parser token, location
+ * and context information.
+ *
+ * @see GenericSyntaxErrorFormatter
+ *
  * @author Jeroen Gremmen
  * @since 0.1.0
  */
 public interface SyntaxErrorFormatter
 {
+  /**
+   * Format the syntax error.
+   *
+   * @param startToken  start token representing the beginning of the syntax error, not {@code null}
+   * @param stopToken   stop token representing the end of the syntax error, not {@code null}
+   * @param errorMsg    error message describing the syntax error, not {@code null}
+   * @param ex          optional {@code RecognitionException} instance providing additional
+   *                    information on where the syntax error occurred
+   *
+   * @return  formatted syntax error message, never {@code null}
+   */
   @Contract(pure = true)
   @NotNull String format(@NotNull Token startToken, @NotNull Token stopToken,
                          @NotNull String errorMsg, RecognitionException ex);

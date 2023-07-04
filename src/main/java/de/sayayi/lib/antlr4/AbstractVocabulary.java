@@ -15,7 +15,6 @@
  */
 package de.sayayi.lib.antlr4;
 
-import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.Vocabulary;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -25,10 +24,26 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import static java.util.stream.Collectors.joining;
+import static org.antlr.v4.runtime.Recognizer.EOF;
 
 
 /**
  * Convenience class for creating a custom vocabulary.
+ * <p>
+ * Example:
+ * <pre>
+ *   public MyVocabulary extends AbstractVocabulary
+ *   {
+ *     &#x40;Override
+ *     protected addTokens()
+ *     {
+ *       add(1, "'while'", "WHILE");
+ *       add(2, "&lt;number&gt;", "NUMBER");
+ *       add(3, "'-'", "DASH");
+ *       ...
+ *     }
+ *   }
+ * </pre>
  *
  * @author Jeroen Gremmen
  * @since 0.1.0
@@ -41,14 +56,26 @@ public abstract class AbstractVocabulary implements Vocabulary
 
   protected AbstractVocabulary()
   {
-    add(Recognizer.EOF, "<EOF>", "EOF");
+    add(EOF, "<EOF>", "EOF");
     addTokens();
   }
 
 
+  /**
+   * This method is invoked by the constructor and is meant for implementing classes to
+   * {@link #add(int, String, String) add} tokens to the vocabulary.
+   */
   protected abstract void addTokens();
 
 
+  /**
+   * Adds a token to the vocabulary. If a token with the same {@code tokenType} already exists,
+   * it will be overwritten.
+   *
+   * @param tokenType  token type; this is the number uniquely identifying a lexer or parser token
+   * @param literal    literal representation of the token, not {@code null}
+   * @param symbol     symbolic representation of the token, not {@code null}
+   */
   @Contract(mutates = "this")
   protected void add(int tokenType, @NotNull String literal, @NotNull String symbol) {
     vocabulary.put(tokenType, new Name(literal, symbol));
@@ -62,20 +89,26 @@ public abstract class AbstractVocabulary implements Vocabulary
 
 
   @Override
-  public String getLiteralName(int tokenType) {
-    return vocabulary.containsKey(tokenType) ? vocabulary.get(tokenType).literal : null;
+  public String getLiteralName(int tokenType)
+  {
+    final Name name = vocabulary.get(tokenType);
+    return name == null ? null : name.literal;
   }
 
 
   @Override
-  public String getSymbolicName(int tokenType) {
-    return vocabulary.containsKey(tokenType) ? vocabulary.get(tokenType).symbol : null;
+  public String getSymbolicName(int tokenType)
+  {
+    final Name name = vocabulary.get(tokenType);
+    return name == null ? null : name.symbol;
   }
 
 
   @Override
-  public String getDisplayName(int tokenType) {
-    return !vocabulary.containsKey(tokenType) ? Integer.toString(tokenType) : vocabulary.get(tokenType).literal;
+  public String getDisplayName(int tokenType)
+  {
+    final Name name = vocabulary.get(tokenType);
+    return name == null ? Integer.toString(tokenType) : name.literal;
   }
 
 
