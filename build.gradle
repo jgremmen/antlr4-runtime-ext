@@ -16,9 +16,9 @@ version '0.3.1'
 
 
 def antlr4Version = "4.9.3"
-def junitVersion = "5.9.1"
-def lombokVersion = "1.18.24"
-def jetbrainsAnnotationsVersion = "23.0.0"
+def junitVersion = "5.9.3"
+def lombokVersion = "1.18.28"
+def jetbrainsAnnotationsVersion = "24.0.1"
 
 
 repositories {
@@ -44,18 +44,15 @@ apply from: file('gradle/publishing.gradle')
 
 dependencies {
   // java
-  annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
-
   implementation "org.antlr:antlr4-runtime:${antlr4Version}"
 
-  compileOnlyApi "org.projectlombok:lombok:${lombokVersion}"
-  compileOnlyApi "org.jetbrains:annotations:${jetbrainsAnnotationsVersion}"
+  compileOnlyApi "org.jetbrains:annotations-java5:${jetbrainsAnnotationsVersion}"
 
   // test
   testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
 
   testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
-  testCompileOnly "org.jetbrains:annotations:${jetbrainsAnnotationsVersion}"
+  testCompileOnly "org.jetbrains:annotations-java5:${jetbrainsAnnotationsVersion}"
 
   testImplementation "org.junit.jupiter:junit-jupiter-api:${junitVersion}"
   testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${junitVersion}"
