@@ -186,7 +186,7 @@ public abstract class AbstractAntlr4Parser
 
 
   @Contract("_, _, _, _, _ -> new")
-  protected abstract <E extends RuntimeException> @NotNull E createException(
+  protected abstract @NotNull RuntimeException createException(
       @NotNull Token startToken, @NotNull Token stopToken, @NotNull String formattedMessage,
       @NotNull String errorMsg, Exception cause);
 
