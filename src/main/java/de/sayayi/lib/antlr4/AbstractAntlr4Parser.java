@@ -42,7 +42,7 @@ public abstract class AbstractAntlr4Parser
 
 
   protected AbstractAntlr4Parser() {
-    this(new GenericSyntaxErrorFormatter(8, 0, 0));
+    this(new GenericSyntaxErrorFormatter(8, 0, 0, " "));
   }
 
 

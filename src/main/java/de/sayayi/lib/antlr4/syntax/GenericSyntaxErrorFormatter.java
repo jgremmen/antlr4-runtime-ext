@@ -26,6 +26,7 @@ import static java.lang.Character.isSpaceChar;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.util.Arrays.fill;
+import static java.util.Objects.requireNonNull;
 import static org.antlr.v4.runtime.Token.EOF;
 
 
@@ -38,16 +39,16 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
   private final int tabSize;
   private final int showLinesBefore;
   private final int showLinesAfter;
-  protected final int indent;
+  private final String prefix;
 
 
-  public GenericSyntaxErrorFormatter(int tabSize, int showLinesBefore, int showLinesAfter) {
-    this(tabSize, showLinesBefore, showLinesAfter, 1);
+  public GenericSyntaxErrorFormatter(int tabSize, int showLinesBefore, int showLinesAfter, int indent) {
+    this(tabSize, showLinesBefore, showLinesAfter, prefixFromIndent(indent));
   }
 
 
   public GenericSyntaxErrorFormatter(int tabSize, int showLinesBefore, int showLinesAfter,
-                                     int indent)
+                                     @NotNull String prefix)
   {
     if (tabSize < 1)
       throw new IllegalArgumentException("tabSize must be at least 1");
@@ -55,7 +56,7 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
     this.tabSize = tabSize;
     this.showLinesBefore = min(max(showLinesBefore, 0), 0x3fff_ffff);
     this.showLinesAfter = min(max(showLinesAfter, 0), 0x3fff_ffff);
-    this.indent = max(0, indent);
+    this.prefix = requireNonNull(prefix, "prefix must not be null");
   }
 
 
@@ -79,8 +80,8 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
         .split("\r?\n");
     final int formatStopLine0Based = min(stopLine0Based + showLinesAfter, lines.length - 1);
 
-    final String lineFormat = getLineFormat(lines.length, formatStopLine0Based + 1);
-    final int lineFormatLength = String.format(lineFormat, 1).length();
+    final String lineNumberFormat = getLineNumberFormat(lines.length, formatStopLine0Based + 1);
+    final int lineNumberFormatLength = String.format(lineNumberFormat, 1).length();
 
     final StringBuilder text = new StringBuilder();
 
@@ -90,11 +91,13 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
       final char[] lineChars = getLineCharacters(line);
       int lineLength = lineChars.length;
 
-      text.append(String.format(lineFormat, l + 1)).append(lineChars).append('\n');
+      text.append(prefix).append(String.format(lineNumberFormat, l + 1)).append(lineChars).append('\n');
 
       if (l >= startLine0Based && l <= stopLine0Based &&
           !(l > startLine0Based && l < stopLine0Based && lineLength == 0))
       {
+        text.append(prefix);
+
         if (startLine0Based == l)
           lineLength = max(adjustLocation(lineChars, startLocation.charPositionInLine) + 1, lineLength);
         if (stopLine0Based == l)
@@ -103,7 +106,7 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
         boolean printMarker = false;
         final char marker = getMarker();
 
-        for(int c = -lineFormatLength;
+        for(int c = -lineNumberFormatLength;
             c < lineLength && !(stopLine0Based == l && c > stopLocation.charPositionInLine);
             c++)
         {
@@ -169,13 +172,8 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
 
 
   @Contract(pure = true)
-  protected @NotNull String getLineFormat(int lines, int stopLine)
+  protected @NotNull String getLineNumberFormat(int lines, int stopLine)
   {
-    final StringBuilder lf = new StringBuilder();
-
-    for(int n = 0; n < indent; n++)
-      lf.append(' ');
-
     if (lines > 1)
     {
       int digits = 1;
@@ -183,10 +181,10 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
       for(int upperLimit = 10; stopLine >= upperLimit && digits <= 9; digits++)
         upperLimit *= 10;
 
-      lf.append("%0").append(digits).append("d: ");
+      return "%0" + digits + "d: ";
     }
-
-    return lf.toString();
+    else
+      return "";
   }
 
 
@@ -281,6 +279,22 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
       len--;
 
     return len < chars.length ? new String(chars, 0, len) : s;
+  }
+
+
+  @Contract(pure = true)
+  private static @NotNull String prefixFromIndent(int indent)
+  {
+    if (indent < 0)
+      throw new IllegalArgumentException("indent must be at least 0");
+
+    if (indent == 0)
+      return "";
+
+    final char[] spaces = new char[indent];
+    fill(spaces, ' ');
+
+    return new String(spaces);
   }
 
 

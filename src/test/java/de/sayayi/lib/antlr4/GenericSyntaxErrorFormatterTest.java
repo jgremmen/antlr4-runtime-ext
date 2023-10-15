@@ -39,7 +39,7 @@ class GenericSyntaxErrorFormatterTest
   @Test
   void format1LineNoContext()
   {
-    val formatter = new GenericSyntaxErrorFormatter(8, 0, 0);
+    val formatter = new GenericSyntaxErrorFormatter(8, 0, 0, 1);
     val msg = formatter.format(
         createTokenWithLocation(99, 104, 2, 3),
         createTokenWithLocation(122, 129, 2, 26), null);
@@ -67,9 +67,25 @@ class GenericSyntaxErrorFormatterTest
 
 
   @Test
+  void format1LineWithContextAndPrefix()
+  {
+    val formatter = new GenericSyntaxErrorFormatter(8, 2, 1, "> ");
+    val msg = formatter.format(
+        createTokenWithLocation(99, 104, 2, 3),
+        createTokenWithLocation(122, 129, 2, 26), null);
+
+    assertEquals("" +
+        "> 1: Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt\n" +
+        "> 2: ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo\n" +
+        ">       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n" +
+        "> 3: dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor\n", msg);
+  }
+
+
+  @Test
   void format3LineWithContext()
   {
-    val formatter = new GenericSyntaxErrorFormatter(8, 1, 1);
+    val formatter = new GenericSyntaxErrorFormatter(8, 1, 1, " ");
     val msg = formatter.format(
         createTokenWithLocation(586, 589, 7, 16),
         createTokenWithLocation(615, 618, 9, 22), null);
