@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 
 
 @TestInstance(PER_CLASS)
+@SuppressWarnings("ConcatenationWithEmptyString")
 class GenericSyntaxErrorFormatterTest
 {
   private CharStream inputStream;
@@ -41,9 +42,9 @@ class GenericSyntaxErrorFormatterTest
     val formatter = new GenericSyntaxErrorFormatter(8, 0, 0);
     val msg = formatter.format(
         createTokenWithLocation(99, 104, 2, 3),
-        createTokenWithLocation(122, 129, 2, 26), "Error", null);
+        createTokenWithLocation(122, 129, 2, 26), null);
 
-    assertEquals("Error:\n" +
+    assertEquals("" +
         " 2: ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo\n" +
         "       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n", msg);
   }
@@ -52,16 +53,16 @@ class GenericSyntaxErrorFormatterTest
   @Test
   void format1LineWithContext()
   {
-    val formatter = new GenericSyntaxErrorFormatter(8, 2, 1);
+    val formatter = new GenericSyntaxErrorFormatter(8, 2, 1, 2);
     val msg = formatter.format(
         createTokenWithLocation(99, 104, 2, 3),
-        createTokenWithLocation(122, 129, 2, 26), "Error", null);
+        createTokenWithLocation(122, 129, 2, 26), null);
 
-    assertEquals("Error:\n" +
-        " 1: Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt\n" +
-        " 2: ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo\n" +
-        "       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n" +
-        " 3: dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor\n", msg);
+    assertEquals("" +
+        "  1: Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt\n" +
+        "  2: ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo\n" +
+        "        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n" +
+        "  3: dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor\n", msg);
   }
 
 
@@ -71,9 +72,9 @@ class GenericSyntaxErrorFormatterTest
     val formatter = new GenericSyntaxErrorFormatter(8, 1, 1);
     val msg = formatter.format(
         createTokenWithLocation(586, 589, 7, 16),
-        createTokenWithLocation(615, 618, 9, 22), "Error", null);
+        createTokenWithLocation(615, 618, 9, 22), null);
 
-    assertEquals("Error:\n" +
+    assertEquals("" +
         " 06: justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem\n" +
         " 07: ipsum dolor sit amet.\n" +
         "                     ^^^^^\n" +
