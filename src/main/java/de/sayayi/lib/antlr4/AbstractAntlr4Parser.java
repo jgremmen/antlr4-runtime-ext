@@ -35,7 +35,7 @@ import static java.util.Objects.requireNonNull;
  * @author Jeroen Gremmen
  * @since 0.1.0
  */
-@SuppressWarnings("UnstableApiUsage")
+@SuppressWarnings({"UnstableApiUsage", "SameParameterValue", "unused"})
 public abstract class AbstractAntlr4Parser
 {
   private final SyntaxErrorFormatter syntaxErrorFormatter;
@@ -53,8 +53,9 @@ public abstract class AbstractAntlr4Parser
 
   @Contract(mutates = "param1")
   protected <L extends TokenSource,P extends Parser,C extends ParserRuleContext,R>
-      R parse(@NotNull L lexer, @NotNull Function<L,P> parserSupplier, @NotNull Function<P,C> ruleExecutor,
-              @NotNull ParseTreeListener listener, @NotNull Function<C,R> contextResultExtractor) {
+      R parse(@NotNull L lexer, @NotNull Function<L,P> parserSupplier,
+              @NotNull Function<P,C> ruleExecutor, @NotNull ParseTreeListener listener,
+              @NotNull Function<C,R> contextResultExtractor) {
     return contextResultExtractor.apply(walk(listener, parse(lexer, parserSupplier, ruleExecutor)));
   }
 
@@ -69,8 +70,17 @@ public abstract class AbstractAntlr4Parser
       public void syntaxError(@NotNull Recognizer<?,?> recognizer, Object offendingSymbol, int line,
                               int charPositionInLine, String msg, RecognitionException ex)
       {
-        AbstractAntlr4Parser.this.syntaxError(recognizer, (Token)offendingSymbol, line,
-            charPositionInLine, msg, ex);
+        if (offendingSymbol == null && recognizer instanceof Lexer)
+        {
+          final Lexer lexer = (Lexer)recognizer;
+          final CharStream inputStream = lexer.getInputStream();
+
+          offendingSymbol = new PositionToken(line, charPositionInLine,
+              lexer._tokenStartCharIndex, inputStream.index(), inputStream);
+        }
+
+        AbstractAntlr4Parser.this.syntaxError(
+            analyseStartStopToken((Token)offendingSymbol, ex), msg, ex);
       }
     };
 
@@ -91,7 +101,7 @@ public abstract class AbstractAntlr4Parser
   }
 
 
-  @Contract(mutates = "param2")
+  @Contract(value = "_, _ -> param2", mutates = "param2")
   private <C extends ParserRuleContext>
       @NotNull C walk(@NotNull ParseTreeListener listener, @NotNull C parserRuleContext)
   {
@@ -101,23 +111,6 @@ public abstract class AbstractAntlr4Parser
         .walk(listener, parserRuleContext);
 
     return parserRuleContext;
-  }
-
-
-  @Contract("_, _, _, _, _, _ -> fail")
-  private void syntaxError(@NotNull Recognizer<?,?> recognizer, Token offendingSymbol,
-                           int line, int charPositionInLine, String msg, RecognitionException ex)
-  {
-    if (offendingSymbol == null && recognizer instanceof Lexer)
-    {
-      final Lexer lexer = (Lexer)recognizer;
-      final CharStream inputStream = lexer.getInputStream();
-
-      offendingSymbol = new PositionToken(line, charPositionInLine,
-          lexer._tokenStartCharIndex, inputStream.index(), inputStream);
-    }
-
-    syntaxError(analyseStartStopToken(offendingSymbol, ex), msg, ex);
   }
 
 
@@ -144,37 +137,58 @@ public abstract class AbstractAntlr4Parser
 
   @Contract("_, _ -> fail")
   protected void syntaxError(@NotNull ParserRuleContext ctx, @NotNull String errorMsg) {
-    syntaxError(new Token[] { ctx.getStart(), ctx.getStop() }, errorMsg, null);
+    syntaxError(ctx, errorMsg, null);
+  }
+
+
+  @Contract("_, _, _ -> fail")
+  protected void syntaxError(@NotNull ParserRuleContext ctx, @NotNull String errorMsg,
+                             Exception cause) {
+    syntaxError(new Token[] { ctx.getStart(), ctx.getStop() }, errorMsg, cause);
   }
 
 
   @Contract("_, _ -> fail")
   protected void syntaxError(@NotNull TerminalNode terminalNode, @NotNull String errorMsg) {
-    syntaxError(terminalNode.getSymbol(), errorMsg);
+    syntaxError(terminalNode, errorMsg, null);
+  }
+
+
+  @Contract("_, _, _ -> fail")
+  protected void syntaxError(@NotNull TerminalNode terminalNode, @NotNull String errorMsg,
+                             Exception cause) {
+    syntaxError(terminalNode.getSymbol(), errorMsg, cause);
   }
 
 
   @Contract("_, _ -> fail")
   protected void syntaxError(@NotNull Token token, @NotNull String errorMsg) {
-    syntaxError(new Token[] { token, token }, errorMsg, null);
+    syntaxError(token, errorMsg, null);
   }
 
 
   @Contract("_, _, _ -> fail")
-  private void syntaxError(@NotNull Token[] startStopToken, @NotNull String errorMsg, RecognitionException ex)
+  protected void syntaxError(@NotNull Token token, @NotNull String errorMsg, Exception cause) {
+    syntaxError(new Token[] { token, token }, errorMsg, cause);
+  }
+
+
+  @Contract("_, _, _ -> fail")
+  private void syntaxError(@NotNull Token[] startStopToken, @NotNull String errorMsg,
+                           Exception cause)
   {
     final Token startToken = startStopToken[0];
     final Token stopToken = startStopToken[1];
 
     throw createException(startToken, stopToken,
-        syntaxErrorFormatter.format(startToken, stopToken, errorMsg, ex), errorMsg, ex);
+        syntaxErrorFormatter.format(startToken, stopToken, cause), errorMsg, cause);
   }
 
 
   @Contract("_, _, _, _, _ -> new")
-  protected abstract @NotNull RuntimeException createException(
+  protected abstract <E extends RuntimeException> @NotNull E createException(
       @NotNull Token startToken, @NotNull Token stopToken, @NotNull String formattedMessage,
-      @NotNull String errorMsg, RecognitionException ex);
+      @NotNull String errorMsg, Exception cause);
 
 
 

@@ -15,7 +15,6 @@
  */
 package de.sayayi.lib.antlr4.syntax;
 
-import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Token;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -30,6 +29,7 @@ import org.jetbrains.annotations.NotNull;
  * @author Jeroen Gremmen
  * @since 0.1.0
  */
+@FunctionalInterface
 public interface SyntaxErrorFormatter
 {
   /**
@@ -37,13 +37,11 @@ public interface SyntaxErrorFormatter
    *
    * @param startToken  start token representing the beginning of the syntax error, not {@code null}
    * @param stopToken   stop token representing the end of the syntax error, not {@code null}
-   * @param errorMsg    error message describing the syntax error, not {@code null}
-   * @param ex          optional {@code RecognitionException} instance providing additional
-   *                    information on where the syntax error occurred
+   * @param cause       optional {@code Exception} instance providing additional information
+   *                    on where the syntax error occurred
    *
    * @return  formatted syntax error message, never {@code null}
    */
   @Contract(pure = true)
-  @NotNull String format(@NotNull Token startToken, @NotNull Token stopToken,
-                         @NotNull String errorMsg, RecognitionException ex);
+  @NotNull String format(@NotNull Token startToken, @NotNull Token stopToken, Exception cause);
 }

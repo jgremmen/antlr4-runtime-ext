@@ -16,15 +16,17 @@
 package de.sayayi.lib.antlr4.syntax;
 
 import org.antlr.v4.runtime.CharStream;
-import org.antlr.v4.runtime.RecognitionException;
+import org.antlr.v4.runtime.LexerNoViableAltException;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.misc.Interval;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import static java.lang.Character.isSpaceChar;
-import static java.lang.Math.*;
+import static java.lang.Math.max;
+import static java.lang.Math.min;
 import static java.util.Arrays.fill;
+import static org.antlr.v4.runtime.Token.EOF;
 
 
 /**
@@ -36,45 +38,53 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
   private final int tabSize;
   private final int showLinesBefore;
   private final int showLinesAfter;
+  protected final int indent;
 
 
-  public GenericSyntaxErrorFormatter(int tabSize, int showLinesBefore, int showLinesAfter)
+  public GenericSyntaxErrorFormatter(int tabSize, int showLinesBefore, int showLinesAfter) {
+    this(tabSize, showLinesBefore, showLinesAfter, 1);
+  }
+
+
+  public GenericSyntaxErrorFormatter(int tabSize, int showLinesBefore, int showLinesAfter,
+                                     int indent)
   {
     if (tabSize < 1)
       throw new IllegalArgumentException("tabSize must be at least 1");
 
     this.tabSize = tabSize;
-    this.showLinesBefore = max(showLinesBefore, 0);
-    this.showLinesAfter = max(showLinesAfter, 0);
+    this.showLinesBefore = min(max(showLinesBefore, 0), 0x3fff_ffff);
+    this.showLinesAfter = min(max(showLinesAfter, 0), 0x3fff_ffff);
+    this.indent = max(0, indent);
   }
 
 
   @Override
   public @NotNull String format(@NotNull Token startToken, @NotNull Token stopToken,
-                                @NotNull String errorMsg, RecognitionException ex)
+                                Exception cause)
   {
     final CharStream inputStream = startToken.getInputStream();
     final Location[] startStopLocation = getStartStopLocation(startToken, stopToken);
 
     if (startStopLocation == null || inputStream == null)
-      return formatForMissingTokenLocation(errorMsg, ex);
+      return formatForMissingTokenLocation(cause);
 
     final Location startLocation = startStopLocation[0];
-    Location stopLocation = startStopLocation[1];
-    final int startLocationLine0 = startLocation.line - 1;
-    final int stopLocationLine0 = stopLocation.line - 1;
+    final Location stopLocation = startStopLocation[1];
+    final int startLine0Based = startLocation.line - 1;
+    final int stopLine0Based = stopLocation.line - 1;
 
     final String[] lines = inputStream
         .getText(Interval.of(0, inputStream.size() - 1))
         .split("\r?\n");
-    final int stopLine = min(stopLocationLine0 + showLinesAfter, lines.length - 1);
+    final int formatStopLine0Based = min(stopLine0Based + showLinesAfter, lines.length - 1);
 
-    final String lineFormat = getLineFormat(lines.length, stopLine + 1);
+    final String lineFormat = getLineFormat(lines.length, formatStopLine0Based + 1);
     final int lineFormatLength = String.format(lineFormat, 1).length();
 
-    final StringBuilder text = new StringBuilder(errorMsg).append(":\n");
+    final StringBuilder text = new StringBuilder();
 
-    for(int l = max(startLocationLine0 - showLinesBefore, 0); l <= stopLine; l++)
+    for(int l = max(startLine0Based - showLinesBefore, 0); l <= formatStopLine0Based; l++)
     {
       final String line = lines[l];
       final char[] lineChars = getLineCharacters(line);
@@ -82,28 +92,28 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
 
       text.append(String.format(lineFormat, l + 1)).append(lineChars).append('\n');
 
-      if (l >= startLocationLine0 && l <= stopLocationLine0 &&
-          !(l > startLocationLine0 && l < stopLocationLine0 && lineLength == 0))
+      if (l >= startLine0Based && l <= stopLine0Based &&
+          !(l > startLine0Based && l < stopLine0Based && lineLength == 0))
       {
-        if (startLocationLine0 == l)
+        if (startLine0Based == l)
           lineLength = max(adjustLocation(lineChars, startLocation.charPositionInLine) + 1, lineLength);
-        if (stopLocationLine0 == l)
+        if (stopLine0Based == l)
           lineLength = max(adjustLocation(lineChars, stopLocation.charPositionInLine) + 1, lineLength);
 
         boolean printMarker = false;
         final char marker = getMarker();
 
         for(int c = -lineFormatLength;
-            c < lineLength && !(stopLocationLine0 == l && c > stopLocation.charPositionInLine);
+            c < lineLength && !(stopLine0Based == l && c > stopLocation.charPositionInLine);
             c++)
         {
-          if (c < 0 || (startLocationLine0 == l && c < startLocation.charPositionInLine))
+          if (c < 0 || (startLine0Based == l && c < startLocation.charPositionInLine))
             text.append(' ');
           else
             text.append((printMarker |= c >= lineChars.length || !isSpaceChar(line.charAt(c))) ? marker : ' ');
         }
 
-        if (l < stopLocationLine0)
+        if (l < stopLine0Based)
           while(text.charAt((lineLength = text.length()) - 1) == ' ')
             text.delete(lineLength - 1, lineLength);
 
@@ -149,15 +159,34 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
 
 
   @Contract(pure = true)
-  protected @NotNull String formatForMissingTokenLocation(@NotNull String errorMsg,
-                                                          @SuppressWarnings("unused") RecognitionException ex) {
-    return errorMsg;
+  protected @NotNull String formatForMissingTokenLocation(Exception ex)
+  {
+    if (ex instanceof LexerNoViableAltException)
+      return ex.toString();
+
+    return "";
   }
 
 
   @Contract(pure = true)
-  protected @NotNull String getLineFormat(int lines, int stopLine) {
-    return lines == 1 ? " " : (" %0" + (int)ceil(log10(stopLine + 1.0)) + "d: ");
+  protected @NotNull String getLineFormat(int lines, int stopLine)
+  {
+    final StringBuilder lf = new StringBuilder();
+
+    for(int n = 0; n < indent; n++)
+      lf.append(' ');
+
+    if (lines > 1)
+    {
+      int digits = 1;
+
+      for(int upperLimit = 10; stopLine >= upperLimit && digits <= 9; digits++)
+        upperLimit *= 10;
+
+      lf.append("%0").append(digits).append("d: ");
+    }
+
+    return lf.toString();
   }
 
 
@@ -205,7 +234,7 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
   {
     final Location endLocation = new Location(stopToken);
 
-    if (stopToken.getType() != Token.EOF)
+    if (stopToken.getType() != EOF)
     {
       final String text = stopToken
           .getInputStream()
@@ -257,10 +286,10 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
 
 
 
-  private static final class Location implements Comparable<Location>
+  protected static final class Location implements Comparable<Location>
   {
-    int line;
-    int charPositionInLine;
+    private int line;
+    private int charPositionInLine;
 
 
     private Location(@NotNull Token token)
@@ -284,8 +313,12 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
 
 
     @Override
-    public String toString() {
-      return "Location(pos=" + charPositionInLine + ')';
+    public String toString()
+    {
+      if (isValid())
+        return "Location(line=" + line + ",pos=" + (charPositionInLine + 1) + ')';
+      else
+        return "Location(<invalid>)";
     }
   }
 }
