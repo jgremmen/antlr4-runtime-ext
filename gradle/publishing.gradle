@@ -20,12 +20,12 @@ tasks.withType(Jar).configureEach {
 
   manifest {
     attributes(
-        "Implementation-Vendor": "Jeroen Gremmen",
-        "Implementation-Vendor-Id": "de.sayayi",
-        "Implementation-Title": project.name,
-        "Implementation-Version": project.version,
-        "Created-By": "${System.getProperty("java.version")} (${System.getProperty("java.specification.vendor")})",
-        "Built-Date": new Date().format('yyyy-MM-dd HH:mm:ss')
+        'Implementation-Vendor': 'Jeroen Gremmen',
+        'Implementation-Vendor-Id': 'de.sayayi',
+        'Implementation-Title': project.name,
+        'Implementation-Version': project.version,
+        'Created-By': "${System.getProperty('java.version')} (${System.getProperty('java.specification.vendor')})",
+        'Built-Date': new Date().format('yyyy-MM-dd HH:mm:ss')
     )
   }
 
@@ -59,12 +59,12 @@ components.java.withVariantsFromConfiguration(configurations.runtimeElements) { 
 
 // add alternative maven optimized variants to java component
 components.java.addVariantsFromConfiguration(configurations.mavenCompile) {
-  mapToMavenScope("compile")
+  mapToMavenScope('compile')
   mapToOptional()
 }
 
 components.java.addVariantsFromConfiguration(configurations.mavenRuntime) {
-  mapToMavenScope("runtime")
+  mapToMavenScope('runtime')
 }
 
 
@@ -72,6 +72,7 @@ publishing {
   publications {
     maven(MavenPublication) {
       from components.java
+      artifact jar
       artifact javadocJar
       artifact sourcesJar
 
@@ -106,16 +107,20 @@ publishing {
     }
   }
 
-  def mavenTempUrl = rootProject.layout.buildDirectory.dir("repository").get()
+  def snapshot = version.toString().endsWith('-SNAPSHOT')
+  def mavenTempUrl = rootProject.layout
+      .buildDirectory.dir('repository').get().dir(snapshot ? 'snapshot' : 'release').asFile
 
   repositories {
     maven {
-      name = "mavenTemp"
+      name = 'mavenTemp'
       url = mavenTempUrl
     }
     maven {
       // maven central
-      url = "https://oss.sonatype.org/service/local/staging/deploy/maven2"
+      url = snapshot
+          ? 'https://oss.sonatype.org/content/repositories/snapshots'
+          : 'https://oss.sonatype.org/service/local/staging/deploy/maven2'
       credentials {
         username = project.findProperty('mavenCentral.username')
         password = project.findProperty('mavenCentral.password')
