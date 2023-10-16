@@ -1,6 +1,7 @@
 plugins {
   id 'java-library'
   id 'idea'
+  id 'antlr'
   id 'maven-publish'
   id 'jacoco'
   id 'signing'
@@ -17,8 +18,17 @@ version '0.4.1'
 
 def antlr4Version = "4.9.3"
 def junitVersion = "5.10.0"
-def lombokVersion = "1.18.30"
+def lombokVersion = "1.18.+"
 def jetbrainsAnnotationsVersion = "24.0.1"
+
+
+configurations {
+  mavenCompile { attributes.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_API)) }
+  mavenRuntime { attributes.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_RUNTIME)) }
+
+  implementation.extendsFrom mavenRuntime
+  compileOnlyApi.extendsFrom mavenCompile
+}
 
 
 repositories {
@@ -44,9 +54,9 @@ apply from: file('gradle/publishing.gradle')
 
 dependencies {
   // java
-  implementation "org.antlr:antlr4-runtime:${antlr4Version}"
+  mavenRuntime "org.antlr:antlr4-runtime:${antlr4Version}"
 
-  compileOnlyApi "org.jetbrains:annotations-java5:${jetbrainsAnnotationsVersion}"
+  mavenCompile "org.jetbrains:annotations-java5:${jetbrainsAnnotationsVersion}"
 
   // test
   testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
@@ -57,4 +67,6 @@ dependencies {
   testImplementation "org.junit.jupiter:junit-jupiter-api:${junitVersion}"
   testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${junitVersion}"
   testRuntimeOnly "org.junit.platform:junit-platform-launcher"
+
+  antlr "org.antlr:antlr4:${antlr4Version}"
 }
