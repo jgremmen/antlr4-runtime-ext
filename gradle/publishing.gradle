@@ -58,16 +58,10 @@ publishing {
       artifact javadocJar
       artifact sourcesJar
 
-      versionMapping {
-        usage('java-runtime') {
-          fromResolutionResult()
-        }
-      }
-
       pom {
         name = 'ANTLR4 Runtime Extensions'
         description = "ANTLR4 Runtime Extensions"
-        url = 'https://github.com/jgremmen/antlr4-runtime'
+        url = 'https://github.com/jgremmen/antlr4-runtime-ext'
         inceptionYear = '2022'
 
         licenses {
@@ -87,9 +81,9 @@ publishing {
         }
 
         scm {
-          connection = 'scm:git:git://github.com/jgremmen/antlr4-runtime.git'
-          developerConnection = 'scm:git:git://github.com/jgremmen/antlr4-runtime.git'
-          url = 'https://github.com/jgremmen/antlr4-runtime'
+          connection = 'scm:git:git://github.com/jgremmen/antlr4-runtime-ext.git'
+          developerConnection = 'scm:git:git://github.com/jgremmen/antlr4-runtime-ext.git'
+          url = 'https://github.com/jgremmen/antlr4-runtime-ext'
         }
       }
     }
