@@ -53,26 +53,10 @@ artifacts {
 }
 
 
-// remove apiElements and runtimeElements variants from java component
-components.java.withVariantsFromConfiguration(configurations.apiElements) { skip() }
-components.java.withVariantsFromConfiguration(configurations.runtimeElements) { skip() }
-
-// add alternative maven optimized variants to java component
-components.java.addVariantsFromConfiguration(configurations.mavenCompile) {
-  mapToMavenScope('compile')
-  mapToOptional()
-}
-
-components.java.addVariantsFromConfiguration(configurations.mavenRuntime) {
-  mapToMavenScope('runtime')
-}
-
-
 publishing {
   publications {
     maven(MavenPublication) {
       from components.java
-      artifact jar
       artifact javadocJar
       artifact sourcesJar
 

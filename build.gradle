@@ -23,11 +23,11 @@ def jetbrainsAnnotationsVersion = "24.0.1"
 
 
 configurations {
-  mavenCompile { attributes.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_API)) }
-  mavenRuntime { attributes.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_RUNTIME)) }
+  antlr4 {
+    visible = false;
+  }
 
-  implementation.extendsFrom mavenRuntime
-  compileOnlyApi.extendsFrom mavenCompile
+  api.setExtendsFrom([])
 }
 
 
@@ -54,9 +54,9 @@ apply from: file('gradle/publishing.gradle')
 
 dependencies {
   // java
-  mavenRuntime "org.antlr:antlr4-runtime:${antlr4Version}"
+  implementation "org.antlr:antlr4-runtime:${antlr4Version}"
 
-  mavenCompile "org.jetbrains:annotations-java5:${jetbrainsAnnotationsVersion}"
+  compileOnlyApi "org.jetbrains:annotations-java5:${jetbrainsAnnotationsVersion}"
 
   // test
   testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
@@ -68,5 +68,10 @@ dependencies {
   testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${junitVersion}"
   testRuntimeOnly "org.junit.platform:junit-platform-launcher"
 
-  antlr "org.antlr:antlr4:${antlr4Version}"
+  antlr4 "org.antlr:antlr4:${antlr4Version}"
+}
+
+
+generateGrammarSource {
+  antlrClasspath = configurations.antlr4
 }
