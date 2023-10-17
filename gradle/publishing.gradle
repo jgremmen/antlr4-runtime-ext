@@ -56,7 +56,11 @@ artifacts {
 publishing {
   publications {
     maven(MavenPublication) {
+      suppressPomMetadataWarningsFor 'optionalApiElements'
+      suppressPomMetadataWarningsFor 'optionalRuntimeElements'
+
       from components.java
+
       artifact javadocJar
       artifact sourcesJar
 

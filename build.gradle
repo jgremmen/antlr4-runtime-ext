@@ -37,6 +37,10 @@ repositories {
 
 
 java {
+  registerFeature('optional') {
+    usingSourceSet sourceSets.main
+  }
+
   toolchain {
     languageVersion = JavaLanguageVersion.of(8)
   }
@@ -54,9 +58,9 @@ apply from: file('gradle/publishing.gradle')
 
 dependencies {
   // java
-  implementation "org.antlr:antlr4-runtime:${antlr4Version}"
+  api "org.antlr:antlr4-runtime:${antlr4Version}"
 
-  compileOnlyApi "org.jetbrains:annotations-java5:${jetbrainsAnnotationsVersion}"
+  optionalCompileOnlyApi "org.jetbrains:annotations-java5:${jetbrainsAnnotationsVersion}"
 
   // test
   testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
