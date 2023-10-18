@@ -17,9 +17,9 @@ version '0.4.2-SNAPSHOT'
 
 
 def antlr4Version = "4.9.3"
-def junitVersion = "5.10.0"
+def junitVersion = "5.10.+"
 def lombokVersion = "1.18.+"
-def jetbrainsAnnotationsVersion = "24.0.1"
+def jetbrainsAnnotationsVersion = "24.0.+"
 
 
 configurations {
@@ -37,10 +37,6 @@ repositories {
 
 
 java {
-  registerFeature('optional') {
-    usingSourceSet sourceSets.main
-  }
-
   toolchain {
     languageVersion = JavaLanguageVersion.of(8)
   }
@@ -60,7 +56,7 @@ dependencies {
   // java
   api "org.antlr:antlr4-runtime:${antlr4Version}"
 
-  optionalCompileOnlyApi "org.jetbrains:annotations-java5:${jetbrainsAnnotationsVersion}"
+  compileOnly "org.jetbrains:annotations-java5:${jetbrainsAnnotationsVersion}"
 
   // test
   testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
