@@ -47,8 +47,7 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
   }
 
 
-  public GenericSyntaxErrorFormatter(int tabSize, int showLinesBefore, int showLinesAfter,
-                                     @NotNull String prefix)
+  public GenericSyntaxErrorFormatter(int tabSize, int showLinesBefore, int showLinesAfter, @NotNull String prefix)
   {
     if (tabSize < 1)
       throw new IllegalArgumentException("tabSize must be at least 1");
@@ -61,8 +60,7 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
 
 
   @Override
-  public @NotNull String format(@NotNull Token startToken, @NotNull Token stopToken,
-                                Exception cause)
+  public @NotNull String format(@NotNull Token startToken, @NotNull Token stopToken, Exception cause)
   {
     final CharStream inputStream = startToken.getInputStream();
     final Location[] startStopLocation = getStartStopLocation(startToken, stopToken);
