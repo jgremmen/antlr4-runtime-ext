@@ -3,7 +3,6 @@ plugins {
   id 'idea'
   id 'antlr'
   id 'maven-publish'
-  id 'jacoco'
   id 'signing'
 }
 
@@ -16,23 +15,15 @@ group 'de.sayayi.lib'
 version '0.5.1-SNAPSHOT'
 
 
-def antlr4Version = "4.13.2"
-def junitVersion = "5.11.+"
-def lombokVersion = "1.18.+"
-def jetbrainsAnnotationsVersion = "25.0.+"
+def antlr4Version = '4.13.2'
+def junitVersion = '5.11.+'
+def lombokVersion = '1.18.+'
+def jetbrainsAnnotationsVersion = '[24.0,26.1)'
 
 
 configurations {
-  antlr4 {
-    visible = false;
-  }
-
+  // get rid of antlr4 configuration dependency, which will include antlr4.jar
   api.setExtendsFrom([])
-}
-
-
-repositories {
-  mavenCentral()
 }
 
 
@@ -43,20 +34,29 @@ java {
 }
 
 
+javadoc {
+  // javadoc 8 has various problems -> use javadoc 17
+  javadocTool = javaToolchains.javadocToolFor {
+    languageVersion = JavaLanguageVersion.of(17)
+  }
+}
+
+
 test {
   useJUnitPlatform()
 }
 
 
-apply from: file('gradle/javadoc.gradle')
-apply from: file('gradle/publishing.gradle')
+repositories {
+  mavenCentral()
+}
 
 
 dependencies {
   // java
-  api "org.antlr:antlr4-runtime:${antlr4Version}"
+  implementation "org.antlr:antlr4-runtime:${antlr4Version}"
 
-  compileOnly "org.jetbrains:annotations:${jetbrainsAnnotationsVersion}"
+  compileOnlyApi "org.jetbrains:annotations:${jetbrainsAnnotationsVersion}"
 
   // test
   testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
@@ -66,12 +66,149 @@ dependencies {
 
   testImplementation "org.junit.jupiter:junit-jupiter-api:${junitVersion}"
   testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${junitVersion}"
-  testRuntimeOnly "org.junit.platform:junit-platform-launcher"
+  testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
-  antlr4 "org.antlr:antlr4:${antlr4Version}"
+  antlr "org.antlr:antlr4:${antlr4Version}"
 }
 
 
-generateGrammarSource {
-  antlrClasspath = configurations.antlr4
+def resolvedAntlr4RuntimeVersion = configurations
+    .compileClasspath
+    .resolvedConfiguration
+    .resolvedArtifacts
+    .find { it.name == 'antlr4-runtime' }
+    .moduleVersion.id.version
+
+def resolvedJetbrainsAnnotationsVersion = configurations
+    .compileClasspath
+    .resolvedConfiguration
+    .resolvedArtifacts
+    .find { it.name == 'annotations' }
+    .moduleVersion.id.version
+
+
+javadoc {
+  title "ANTLR4 Runtime Extensions ${version}"
+
+  (options as StandardJavadocDocletOptions).with {
+    linksOffline "https://javadoc.io/doc/org.jetbrains/annotations/${resolvedJetbrainsAnnotationsVersion}/",
+                 'gradle/javadocs/jetbrains-annotations'
+    linksOffline "https://javadoc.io/doc/org.antlr/antlr4-runtime/${resolvedAntlr4RuntimeVersion}/",
+                 'gradle/javadocs/antlr4-runtime'
+
+    encoding 'UTF-8'
+
+    group("ANTLR4 Runtime API", [
+        'de.sayayi.lib.antlr4',
+        'de.sayayi.lib.antlr4.syntax',
+        'de.sayayi.lib.antlr4.walker'
+    ])
+
+    noQualifiers 'java.util', 'java.lang'
+
+    addStringOption('Xdoclint:-missing', '-quiet')
+  }
+
+  failOnError false
+}
+
+
+tasks.withType(Jar).configureEach {
+  reproducibleFileOrder true
+
+  manifest {
+    attributes(
+        'Implementation-Vendor': 'Jeroen Gremmen',
+        'Implementation-Vendor-Id': 'de.sayayi',
+        'Implementation-Title': project.name,
+        'Implementation-Version': project.version,
+        'Created-By': "${System.getProperty('java.version')} (${System.getProperty('java.specification.vendor')})",
+        'Built-Date': new Date().format('yyyy-MM-dd HH:mm:ss')
+    )
+  }
+
+  from files('LICENSE')
+}
+
+
+tasks.register('javadocJar', Jar) {
+  archiveClassifier.set('javadoc')
+  from javadoc
+}
+
+
+tasks.register('sourcesJar', Jar) {
+  dependsOn classes
+
+  archiveClassifier.set('sources')
+  from sourceSets.main.allSource
+}
+
+
+publishing {
+  publications {
+    create('maven', MavenPublication) {
+      suppressPomMetadataWarningsFor 'optionalApiElements'
+      suppressPomMetadataWarningsFor 'optionalRuntimeElements'
+
+      from components.java
+
+      artifact javadocJar
+      artifact sourcesJar
+
+      pom {
+        name = 'ANTLR4 Runtime Extensions'
+        description = "ANTLR4 Runtime Extensions"
+        url = 'https://github.com/jgremmen/antlr4-runtime-ext'
+        inceptionYear = '2022'
+
+        licenses {
+          license {
+            name = 'Apache License, Version 2.0'
+            url = 'http://www.apache.org/licenses/LICENSE-2.0'
+            distribution = 'repo'
+          }
+        }
+
+        developers {
+          developer {
+            id = 'jgremmen'
+            name = 'Jeroen Gremmen'
+            email = 'jeroen.gremmen@sayayi.de'
+          }
+        }
+
+        scm {
+          connection = 'scm:git:git://github.com/jgremmen/antlr4-runtime-ext.git'
+          developerConnection = 'scm:git:git://github.com/jgremmen/antlr4-runtime-ext.git'
+          url = 'https://github.com/jgremmen/antlr4-runtime-ext'
+        }
+      }
+    }
+  }
+
+  def snapshot = version.toString().endsWith('-SNAPSHOT')
+  def mavenTempUrl = layout.buildDirectory.dir(snapshot ? 'repository/snapshot' : 'repository/release')
+
+  repositories {
+    maven {
+      name = 'mavenTemp'
+      url = mavenTempUrl
+    }
+    maven {
+      // maven central
+      url = snapshot
+          ? 'https://oss.sonatype.org/content/repositories/snapshots'
+          : 'https://oss.sonatype.org/service/local/staging/deploy/maven2'
+      credentials {
+        username = findProperty('mavenCentral.username')
+        password = findProperty('mavenCentral.password')
+      }
+    }
+  }
+}
+
+
+signing {
+  sign publishing.publications.maven
 }
