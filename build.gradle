@@ -140,9 +140,6 @@ tasks.register('sourcesJar', Jar) {
 publishing {
   publications {
     create('maven', MavenPublication) {
-      suppressPomMetadataWarningsFor 'optionalApiElements'
-      suppressPomMetadataWarningsFor 'optionalRuntimeElements'
-
       from components.java
 
       artifact javadocJar
@@ -157,7 +154,7 @@ publishing {
         licenses {
           license {
             name = 'Apache License, Version 2.0'
-            url = 'http://www.apache.org/licenses/LICENSE-2.0'
+            url = 'https://www.apache.org/licenses/LICENSE-2.0'
             distribution = 'repo'
           }
         }
