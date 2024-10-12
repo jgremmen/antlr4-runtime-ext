@@ -31,7 +31,6 @@ import java.util.List;
  * @author Jeroen Gremmen
  * @since 0.1.0
  */
-@SuppressWarnings("UnstableApiUsage")
 final class ParseTreeWalker
 {
   private static final IterativeParseTreeWalker FULL_HEAP_WALKER = new IterativeParseTreeWalker();
@@ -43,8 +42,7 @@ final class ParseTreeWalker
 
 
   @Contract(mutates = "param2")
-  static void walkExitsOnlyRecursive(@NotNull ParseTreeListener listener,
-                                     @NotNull ParserRuleContext parserRuleContext)
+  static void walkExitsOnlyRecursive(@NotNull ParseTreeListener listener, @NotNull ParserRuleContext parserRuleContext)
   {
     final List<ParseTree> children = parserRuleContext.children;
     if (children != null)
@@ -62,8 +60,7 @@ final class ParseTreeWalker
    * @since 0.2.0
    */
   @Contract(mutates = "param2")
-  static void walkExitsOnlyIterative(@NotNull ParseTreeListener listener,
-                                     @NotNull ParserRuleContext parserRuleContext)
+  static void walkExitsOnlyIterative(@NotNull ParseTreeListener listener, @NotNull ParserRuleContext parserRuleContext)
   {
     final Deque<ParserRuleContextNode> nodeStack = new ArrayDeque<>();
     nodeStack.addFirst(new ParserRuleContextNode(parserRuleContext));

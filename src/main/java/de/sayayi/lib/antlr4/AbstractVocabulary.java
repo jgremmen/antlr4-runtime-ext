@@ -48,7 +48,6 @@ import static org.antlr.v4.runtime.Recognizer.EOF;
  * @author Jeroen Gremmen
  * @since 0.1.0
  */
-@SuppressWarnings("UnstableApiUsage")
 public abstract class AbstractVocabulary implements Vocabulary
 {
   private final SortedMap<Integer,Name> vocabulary = new TreeMap<>();

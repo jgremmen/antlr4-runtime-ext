@@ -27,7 +27,6 @@ import java.util.List;
  * @author Jeroen Gremmen
  * @since 0.2.0
  */
-@SuppressWarnings("UnstableApiUsage")
 final class ParserRuleContextNode
 {
   final @NotNull ParserRuleContext parserRuleContext;

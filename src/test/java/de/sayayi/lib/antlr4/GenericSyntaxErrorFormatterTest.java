@@ -9,6 +9,7 @@ import org.antlr.v4.runtime.misc.Pair;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
@@ -22,6 +23,7 @@ import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 
 
 @TestInstance(PER_CLASS)
+@DisplayName("Generic syntax error formatting")
 @SuppressWarnings("ConcatenationWithEmptyString")
 class GenericSyntaxErrorFormatterTest
 {
@@ -37,6 +39,7 @@ class GenericSyntaxErrorFormatterTest
 
 
   @Test
+  @DisplayName("Format a single error line without context")
   void format1LineNoContext()
   {
     val formatter = new GenericSyntaxErrorFormatter(8, 0, 0, 1);
@@ -51,6 +54,7 @@ class GenericSyntaxErrorFormatterTest
 
 
   @Test
+  @DisplayName("Format a single error line with context")
   void format1LineWithContext()
   {
     val formatter = new GenericSyntaxErrorFormatter(8, 2, 1, 2);
@@ -67,6 +71,7 @@ class GenericSyntaxErrorFormatterTest
 
 
   @Test
+  @DisplayName("Format a single error line with context and prefix")
   void format1LineWithContextAndPrefix()
   {
     val formatter = new GenericSyntaxErrorFormatter(8, 2, 1, "> ");
@@ -83,6 +88,7 @@ class GenericSyntaxErrorFormatterTest
 
 
   @Test
+  @DisplayName("Format 3 error lines with context")
   void format3LineWithContext()
   {
     val formatter = new GenericSyntaxErrorFormatter(8, 1, 1, " ");

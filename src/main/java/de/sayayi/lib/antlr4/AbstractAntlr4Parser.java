@@ -35,7 +35,7 @@ import static java.util.Objects.requireNonNull;
  * @author Jeroen Gremmen
  * @since 0.1.0
  */
-@SuppressWarnings({"UnstableApiUsage", "SameParameterValue", "unused"})
+@SuppressWarnings({"SameParameterValue", "unused"})
 public abstract class AbstractAntlr4Parser
 {
   private final SyntaxErrorFormatter syntaxErrorFormatter;
@@ -53,17 +53,15 @@ public abstract class AbstractAntlr4Parser
 
   @Contract(mutates = "param1")
   protected <L extends TokenSource,P extends Parser,C extends ParserRuleContext,R>
-      R parse(@NotNull L lexer, @NotNull Function<L,P> parserSupplier,
-              @NotNull Function<P,C> ruleExecutor, @NotNull ParseTreeListener listener,
-              @NotNull Function<C,R> contextResultExtractor) {
+      R parse(@NotNull L lexer, @NotNull Function<L,P> parserSupplier, @NotNull Function<P,C> ruleExecutor,
+              @NotNull ParseTreeListener listener, @NotNull Function<C,R> contextResultExtractor) {
     return contextResultExtractor.apply(walk(listener, parse(lexer, parserSupplier, ruleExecutor)));
   }
 
 
   @Contract(value = "_, _, _ -> new", mutates = "param1")
   protected <L extends TokenSource,P extends Parser,C extends ParserRuleContext>
-      @NotNull C parse(@NotNull L lexer, @NotNull Function<L,P> parserSupplier,
-                       @NotNull Function<P,C> ruleExecutor)
+      @NotNull C parse(@NotNull L lexer, @NotNull Function<L,P> parserSupplier, @NotNull Function<P,C> ruleExecutor)
   {
     final ANTLRErrorListener errorListener = new BaseErrorListener() {
       @Override
@@ -75,12 +73,11 @@ public abstract class AbstractAntlr4Parser
           final Lexer lexer = (Lexer)recognizer;
           final CharStream inputStream = lexer.getInputStream();
 
-          offendingSymbol = new PositionToken(line, charPositionInLine,
+          offendingSymbol = new LexerPositionToken(line, charPositionInLine,
               lexer._tokenStartCharIndex, inputStream.index(), inputStream);
         }
 
-        AbstractAntlr4Parser.this.syntaxError(
-            analyseStartStopToken((Token)offendingSymbol, ex), msg, ex);
+        AbstractAntlr4Parser.this.syntaxError(analyseStartStopToken((Token)offendingSymbol, ex), msg, ex);
       }
     };
 
@@ -102,7 +99,7 @@ public abstract class AbstractAntlr4Parser
 
 
   @Contract(value = "_, _ -> param2", mutates = "param2")
-  private <C extends ParserRuleContext>
+  protected <C extends ParserRuleContext>
       @NotNull C walk(@NotNull ParseTreeListener listener, @NotNull C parserRuleContext)
   {
     (listener instanceof WalkerSupplier
@@ -142,8 +139,7 @@ public abstract class AbstractAntlr4Parser
 
 
   @Contract("_, _, _ -> fail")
-  protected void syntaxError(@NotNull ParserRuleContext ctx, @NotNull String errorMsg,
-                             Exception cause) {
+  protected void syntaxError(@NotNull ParserRuleContext ctx, @NotNull String errorMsg, Exception cause) {
     syntaxError(new Token[] { ctx.getStart(), ctx.getStop() }, errorMsg, cause);
   }
 
@@ -155,8 +151,7 @@ public abstract class AbstractAntlr4Parser
 
 
   @Contract("_, _, _ -> fail")
-  protected void syntaxError(@NotNull TerminalNode terminalNode, @NotNull String errorMsg,
-                             Exception cause) {
+  protected void syntaxError(@NotNull TerminalNode terminalNode, @NotNull String errorMsg, Exception cause) {
     syntaxError(terminalNode.getSymbol(), errorMsg, cause);
   }
 
@@ -174,8 +169,7 @@ public abstract class AbstractAntlr4Parser
 
 
   @Contract("_, _, _ -> fail")
-  private void syntaxError(@NotNull Token[] startStopToken, @NotNull String errorMsg,
-                           Exception cause)
+  private void syntaxError(@NotNull Token[] startStopToken, @NotNull String errorMsg, Exception cause)
   {
     final Token startToken = startStopToken[0];
     final Token stopToken = startStopToken[1];
@@ -204,7 +198,7 @@ public abstract class AbstractAntlr4Parser
 
 
 
-  private static final class PositionToken implements Token
+  private static final class LexerPositionToken implements Token
   {
     private final int line;
     private final int charPositionInLine;
@@ -213,8 +207,8 @@ public abstract class AbstractAntlr4Parser
     private final CharStream inputStream;
 
 
-    public PositionToken(int line, int charPositionInLine, int startIndex, int stopIndex,
-                         @NotNull CharStream inputStream)
+    public LexerPositionToken(int line, int charPositionInLine, int startIndex, int stopIndex,
+                              @NotNull CharStream inputStream)
     {
       this.line = line;
       this.charPositionInLine = charPositionInLine;
@@ -262,7 +256,7 @@ public abstract class AbstractAntlr4Parser
 
     @Override
     public int getType() {
-      return 0;
+      return INVALID_TYPE;
     }
 
 
