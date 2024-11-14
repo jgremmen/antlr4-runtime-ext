@@ -63,15 +63,15 @@ public abstract class AbstractAntlr4Parser
   protected <L extends TokenSource,P extends Parser,C extends ParserRuleContext>
       @NotNull C parse(@NotNull L lexer, @NotNull Function<L,P> parserSupplier, @NotNull Function<P,C> ruleExecutor)
   {
-    final ANTLRErrorListener errorListener = new BaseErrorListener() {
+    var errorListener = new BaseErrorListener() {
       @Override
       public void syntaxError(@NotNull Recognizer<?,?> recognizer, Object offendingSymbol, int line,
                               int charPositionInLine, String msg, RecognitionException ex)
       {
         if (offendingSymbol == null && recognizer instanceof Lexer)
         {
-          final Lexer lexer = (Lexer)recognizer;
-          final CharStream inputStream = lexer.getInputStream();
+          var lexer = (Lexer)recognizer;
+          var inputStream = lexer.getInputStream();
 
           offendingSymbol = new LexerPositionToken(line, charPositionInLine,
               lexer._tokenStartCharIndex, inputStream.index(), inputStream);
@@ -83,13 +83,13 @@ public abstract class AbstractAntlr4Parser
 
     if (lexer instanceof Lexer)
     {
-      final Lexer antlr4Lexer = (Lexer)lexer;
+      var antlr4Lexer = (Lexer)lexer;
 
       antlr4Lexer.removeErrorListener(ConsoleErrorListener.INSTANCE);  // console polluter
       antlr4Lexer.addErrorListener(errorListener);
     }
 
-    final P parser = parserSupplier.apply(lexer);
+    var parser = parserSupplier.apply(lexer);
 
     parser.removeErrorListener(ConsoleErrorListener.INSTANCE);  // console polluter
     parser.addErrorListener(errorListener);
@@ -116,14 +116,14 @@ public abstract class AbstractAntlr4Parser
   {
     if (ex != null)
     {
-      final Token offendingToken = ex.getOffendingToken();
+      var offendingToken = ex.getOffendingToken();
       if (offendingToken != null)
         return new Token[] { offendingToken, offendingToken };
 
-      final RuleContext ctx = ex.getCtx();
+      var ctx = ex.getCtx();
       if (ctx instanceof ParserRuleContext)
       {
-        final ParserRuleContext parserRuleContext = (ParserRuleContext)ctx;
+        var parserRuleContext = (ParserRuleContext)ctx;
         return new Token[] { parserRuleContext.getStart(), parserRuleContext.getStop() };
       }
     }
@@ -171,8 +171,8 @@ public abstract class AbstractAntlr4Parser
   @Contract("_, _, _ -> fail")
   private void syntaxError(@NotNull Token[] startStopToken, @NotNull String errorMsg, Exception cause)
   {
-    final Token startToken = startStopToken[0];
-    final Token stopToken = startStopToken[1];
+    var startToken = startStopToken[0];
+    var stopToken = startStopToken[1];
 
     throw createException(startToken, stopToken,
         syntaxErrorFormatter.format(startToken, stopToken, cause), errorMsg, cause);

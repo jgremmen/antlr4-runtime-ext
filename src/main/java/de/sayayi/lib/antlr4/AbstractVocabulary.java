@@ -19,7 +19,6 @@ import org.antlr.v4.runtime.Vocabulary;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
@@ -90,7 +89,7 @@ public abstract class AbstractVocabulary implements Vocabulary
   @Override
   public String getLiteralName(int tokenType)
   {
-    final Name name = vocabulary.get(tokenType);
+    var name = vocabulary.get(tokenType);
     return name == null ? null : name.literal;
   }
 
@@ -98,7 +97,7 @@ public abstract class AbstractVocabulary implements Vocabulary
   @Override
   public String getSymbolicName(int tokenType)
   {
-    final Name name = vocabulary.get(tokenType);
+    var name = vocabulary.get(tokenType);
     return name == null ? null : name.symbol;
   }
 
@@ -106,7 +105,7 @@ public abstract class AbstractVocabulary implements Vocabulary
   @Override
   public String getDisplayName(int tokenType)
   {
-    final Name name = vocabulary.get(tokenType);
+    var name = vocabulary.get(tokenType);
     return name == null ? Integer.toString(tokenType) : name.literal;
   }
 
@@ -114,17 +113,14 @@ public abstract class AbstractVocabulary implements Vocabulary
   @Override
   public String toString()
   {
-    return vocabulary.entrySet()
+    return vocabulary
+        .entrySet()
         .stream()
-        .map(this::toString_entry)
+        .map(entry -> {
+          var name = entry.getValue();
+          return "{token=" + entry.getKey() + ",literal=" + name.literal + ",symbol=" + name.symbol + '}';
+        })
         .collect(joining(",", "Vocabulary[", "]"));
-  }
-
-
-  private @NotNull String toString_entry(@NotNull Entry<Integer,Name> entry)
-  {
-    final Name name = entry.getValue();
-    return "{token=" + entry.getKey() + ",literal=" + name.literal + ",symbol=" + name.symbol + '}';
   }
 
 

@@ -20,8 +20,6 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
-
 
 /**
  * @author Jeroen Gremmen
@@ -38,7 +36,7 @@ final class ParserRuleContextNode
   {
     this.parserRuleContext = parserRuleContext;
 
-    final List<ParseTree> childList = parserRuleContext.children;
+    var childList = parserRuleContext.children;
 
     childCount = childList == null ? 0 : childList.size();
     index = 0;

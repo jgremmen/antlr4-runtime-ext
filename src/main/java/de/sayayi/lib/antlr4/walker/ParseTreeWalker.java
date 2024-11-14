@@ -23,8 +23,6 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.List;
 
 
 /**
@@ -44,10 +42,10 @@ final class ParseTreeWalker
   @Contract(mutates = "param2")
   static void walkExitsOnlyRecursive(@NotNull ParseTreeListener listener, @NotNull ParserRuleContext parserRuleContext)
   {
-    final List<ParseTree> children = parserRuleContext.children;
+    var children = parserRuleContext.children;
     if (children != null)
     {
-      for(final ParseTree parseTreeChild: children)
+      for(var parseTreeChild: children)
         if (parseTreeChild instanceof ParserRuleContext)
           walkExitsOnlyRecursive(listener, (ParserRuleContext)parseTreeChild);
     }
@@ -62,12 +60,12 @@ final class ParseTreeWalker
   @Contract(mutates = "param2")
   static void walkExitsOnlyIterative(@NotNull ParseTreeListener listener, @NotNull ParserRuleContext parserRuleContext)
   {
-    final Deque<ParserRuleContextNode> nodeStack = new ArrayDeque<>();
+    var nodeStack = new ArrayDeque<ParserRuleContextNode>();
     nodeStack.addFirst(new ParserRuleContextNode(parserRuleContext));
 
     for(ParseTree childNode; !nodeStack.isEmpty();)
     {
-      final ParserRuleContextNode parentNode = nodeStack.peekFirst();
+      var parentNode = nodeStack.peekFirst();
 
       if ((childNode = parentNode.getNextChild()) == null)
       {
@@ -86,10 +84,10 @@ final class ParseTreeWalker
   {
     parserRuleContext.enterRule(listener);
 
-    final List<ParseTree> children = parserRuleContext.children;
+    var children = parserRuleContext.children;
     if (children != null)
     {
-      for(final ParseTree parseTreeChild: children)
+      for(var parseTreeChild: children)
         if (parseTreeChild instanceof ParserRuleContext)
           walkEnterAndExitsOnlyRecursive(listener, (ParserRuleContext)parseTreeChild);
     }
@@ -105,12 +103,12 @@ final class ParseTreeWalker
   static void walkEnterAndExitsOnlyIterative(@NotNull ParseTreeListener listener,
                                              @NotNull ParserRuleContext parserRuleContext)
   {
-    final Deque<ParserRuleContextNode> nodeStack = new ArrayDeque<>();
+    var nodeStack = new ArrayDeque<ParserRuleContextNode>();
     nodeStack.addFirst(new ParserRuleContextNode(parserRuleContext));
 
     for(ParseTree childNode; !nodeStack.isEmpty();)
     {
-      final ParserRuleContextNode parentNode = nodeStack.peekFirst();
+      var parentNode = nodeStack.peekFirst();
       if (parentNode.isFirst())
         parentNode.parserRuleContext.enterRule(listener);
 

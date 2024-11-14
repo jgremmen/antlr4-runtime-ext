@@ -15,7 +15,6 @@
  */
 package de.sayayi.lib.antlr4.syntax;
 
-import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.LexerNoViableAltException;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.misc.Interval;
@@ -62,32 +61,31 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
   @Override
   public @NotNull String format(@NotNull Token startToken, @NotNull Token stopToken, Exception cause)
   {
-    final CharStream inputStream = startToken.getInputStream();
-    final Location[] startStopLocation = getStartStopLocation(startToken, stopToken);
+    var inputStream = startToken.getInputStream();
+    var startStopLocation = getStartStopLocation(startToken, stopToken);
 
     if (startStopLocation == null || inputStream == null)
       return formatForMissingTokenLocation(cause);
 
-    final Location startLocation = startStopLocation[0];
-    final Location stopLocation = startStopLocation[1];
-    final int startLine0Based = startLocation.line - 1;
-    final int stopLine0Based = stopLocation.line - 1;
+    var startLocation = startStopLocation[0];
+    var stopLocation = startStopLocation[1];
+    var startLine0Based = startLocation.line - 1;
+    var stopLine0Based = stopLocation.line - 1;
 
-    final String[] lines = inputStream
+    var lines = inputStream
         .getText(Interval.of(0, inputStream.size() - 1))
         .split("\r?\n");
-    final int formatStopLine0Based = min(stopLine0Based + showLinesAfter, lines.length - 1);
+    var formatStopLine0Based = min(stopLine0Based + showLinesAfter, lines.length - 1);
 
-    final String lineNumberFormat = getLineNumberFormat(lines.length, formatStopLine0Based + 1);
-    final int lineNumberFormatLength = String.format(lineNumberFormat, 1).length();
-
-    final StringBuilder text = new StringBuilder();
+    var lineNumberFormat = getLineNumberFormat(lines.length, formatStopLine0Based + 1);
+    var lineNumberFormatLength = String.format(lineNumberFormat, 1).length();
+    var text = new StringBuilder();
 
     for(int l = max(startLine0Based - showLinesBefore, 0); l <= formatStopLine0Based; l++)
     {
-      final String line = lines[l];
-      final char[] lineChars = getLineCharacters(line);
-      int lineLength = lineChars.length;
+      var line = lines[l];
+      var lineChars = getLineCharacters(line);
+      var lineLength = lineChars.length;
 
       text.append(prefix).append(String.format(lineNumberFormat, l + 1)).append(lineChars).append('\n');
 
@@ -101,8 +99,8 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
         if (stopLine0Based == l)
           lineLength = max(adjustLocation(lineChars, stopLocation.charPositionInLine) + 1, lineLength);
 
-        boolean printMarker = false;
-        final char marker = getMarker();
+        var printMarker = false;
+        var marker = getMarker();
 
         for(int c = -lineNumberFormatLength;
             c < lineLength && !(stopLine0Based == l && c > stopLocation.charPositionInLine);
@@ -129,7 +127,7 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
   @Contract(pure = true)
   private char[] getLineCharacters(@NotNull String line)
   {
-    final StringBuilder s = new StringBuilder();
+    var s = new StringBuilder();
 
     line = trimRight(line);
 
@@ -137,14 +135,14 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
       s.append(line);
     else
     {
-      int p = 0;
-      final char[] spaces = new char[tabSize];
+      var p = 0;
+      var spaces = new char[tabSize];
       fill(spaces, ' ');
 
-      for(char ch: line.toCharArray())
+      for(var ch: line.toCharArray())
         if (ch == '\t')
         {
-          final int spacesToAdd = tabSize - (p % tabSize);
+          var spacesToAdd = tabSize - (p % tabSize);
           s.append(spaces, 0, spacesToAdd);
           p += spacesToAdd;
         }
@@ -204,8 +202,8 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
   @Contract(pure = true)
   private Location[] getStartStopLocation(@NotNull Token startToken, @NotNull Token stopToken)
   {
-    Location startLocation = getStartLocation(startToken);
-    Location stopLocation = getStopLocation(stopToken);
+    var startLocation = getStartLocation(startToken);
+    var stopLocation = getStopLocation(stopToken);
 
     if (!startLocation.isValid() && !stopLocation.isValid())
       return null;
