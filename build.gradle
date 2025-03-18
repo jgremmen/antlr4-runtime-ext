@@ -201,3 +201,8 @@ publishing {
 signing {
   sign publishing.publications.maven
 }
+
+
+wrapper {
+  distributionType = Wrapper.DistributionType.BIN
+}
