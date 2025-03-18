@@ -20,10 +20,13 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.misc.Interval;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Range;
 
 import static java.lang.Character.isSpaceChar;
+import static java.lang.Integer.MAX_VALUE;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
+import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
 import static java.util.Objects.requireNonNull;
 import static org.antlr.v4.runtime.Token.EOF;
@@ -77,8 +80,8 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
         .split("\r?\n");
     var formatStopLine0Based = min(stopLine0Based + showLinesAfter, lines.length - 1);
 
-    var lineNumberFormat = getLineNumberFormat(lines.length, formatStopLine0Based + 1);
-    var lineNumberFormatLength = String.format(lineNumberFormat, 1).length();
+    var lineNumberFormatter = getLineNumberFormatter(lines.length, formatStopLine0Based + 1);
+    var lineNumberFormatLength = lineNumberFormatter.format(1, false).length();
     var text = new StringBuilder();
 
     for(int l = max(startLine0Based - showLinesBefore, 0); l <= formatStopLine0Based; l++)
@@ -86,11 +89,11 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
       var line = lines[l];
       var lineChars = getLineCharacters(line);
       var lineLength = lineChars.length;
+      var markedLine = l >= startLine0Based && l <= stopLine0Based;
 
-      text.append(prefix).append(String.format(lineNumberFormat, l + 1)).append(lineChars).append('\n');
+      text.append(prefix).append(lineNumberFormatter.format(l + 1, markedLine)).append(lineChars).append('\n');
 
-      if (l >= startLine0Based && l <= stopLine0Based &&
-          !(l > startLine0Based && l < stopLine0Based && lineLength == 0))
+      if (markedLine && !(l > startLine0Based && l < stopLine0Based && lineLength == 0))
       {
         text.append(prefix);
 
@@ -167,21 +170,33 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
   }
 
 
+  /**
+   * Creates a line number formatter.
+   * <p>
+   * The default implementation returns a formatter that produces "{@code <line>: }", where {@code <line>} is the
+   * zero-padded line number, e.g. "{@code 06: }".
+   *
+   * @param lines     the number of lines that were supposed to be parsed ({@code 0}..{@code n})
+   * @param stopLine  the highest line number to be displayed by the syntax error formatter ({@code 1}..{@code n})
+   *
+   * @return  line number formatter instance, never {@code null}
+   *
+   * @since 0.5.2
+   */
   @Contract(pure = true)
-  protected @NotNull String getLineNumberFormat(int lines, int stopLine)
+  protected @NotNull LineNumberFormatter getLineNumberFormatter(int lines, int stopLine)
   {
-    if (lines > 1)
-    {
-      int digits = 1;
+    if (lines <= 1 || stopLine <= 1)
+      return (lineNumber, markedLine) -> "";
 
-      for(int upperLimit = 10; stopLine >= upperLimit && digits <= 9; digits++)
-        upperLimit *= 10;
+    // digits = floor(1 + log10(stopLine))
+    int digits = 1;
+    for(int upperLimit = 10; stopLine >= upperLimit; digits++)
+      upperLimit *= 10;
 
-      return "%0" + digits + "d: ";
-    }
-    else
-      return "";
+    return new DefaultLineNumberFormatter(digits, '0', null, ": ");
   }
+
 
 
   @Contract(pure = true)
@@ -226,7 +241,7 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
   @Contract(pure = true)
   protected @NotNull Location getStopLocation(@NotNull Token stopToken)
   {
-    final Location endLocation = new Location(stopToken);
+    final var endLocation = new Location(stopToken);
 
     if (stopToken.getType() != EOF)
     {
@@ -236,7 +251,7 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
 
       if (!text.isEmpty())
       {
-        final char[] chars = text.toCharArray();
+        final var chars = text.toCharArray();
 
         for(int n = 0, l = chars.length - 1; n < l; n++)
         {
@@ -268,7 +283,7 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
   @Contract(pure = true)
   private @NotNull String trimRight(@NotNull String s)
   {
-    final char[] chars = s.toCharArray();
+    final var chars = s.toCharArray();
     int len = chars.length;
 
     while(len > 0 && chars[len - 1] <= ' ')
@@ -287,7 +302,7 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
     if (indent == 0)
       return "";
 
-    final char[] spaces = new char[indent];
+    final var spaces = new char[indent];
     fill(spaces, ' ');
 
     return new String(spaces);
@@ -329,6 +344,82 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
         return "Location(line=" + line + ",pos=" + (charPositionInLine + 1) + ')';
       else
         return "Location(<invalid>)";
+    }
+  }
+
+
+
+
+  /**
+   * @author Jeroen Gremmen
+   * @since 0.5.2
+   */
+  @FunctionalInterface
+  public interface LineNumberFormatter
+  {
+    /**
+     * Format the given {@code lineNumber}. This method must return a string of a fixed length, regardless of the
+     * line number being formatted. 
+     * <p>
+     * Note: the highest line number must be known in order to create a suitable implementation.
+     * 
+     * @param lineNumber  line number to format ({@code 1}..{@code n})
+     * @param markedLine  indicates whether the line contains an error marker
+     * 
+     * @return  the formatted line number, never {@code null}
+     *
+     * @see GenericSyntaxErrorFormatter#getLineNumberFormatter(int, int) 
+     */
+    @Contract(pure = true)
+    @NotNull String format(@Range(from = 1, to = MAX_VALUE) int lineNumber, boolean markedLine);
+  }
+
+
+
+
+  /**
+   * Default line number formatter.
+   *
+   * @author Jeroen Gremmen
+   * @since 0.5.2
+   */
+  public static class DefaultLineNumberFormatter implements LineNumberFormatter
+  {
+    protected final int prefixLength;
+    protected final char[] chars;
+    protected final int lineNumberWidth;
+    protected final char paddingChar;
+
+
+    public DefaultLineNumberFormatter(@Range(from = 0, to = 10) int lineNumberWidth, char paddingChar,
+                                      String prefix, String suffix)
+    {
+      this.lineNumberWidth = lineNumberWidth;
+      this.paddingChar = paddingChar;
+
+      var suffixLength = suffix == null ? 0 : suffix.length();
+
+      prefixLength = prefix == null ? 0 : prefix.length();
+      chars = new char[prefixLength + lineNumberWidth + suffixLength];
+
+      if (prefixLength > 0)
+        arraycopy(prefix.toCharArray(), 0, chars, 0, prefixLength);
+      if (suffixLength > 0)
+        arraycopy(suffix.toCharArray(), 0, chars, prefixLength + lineNumberWidth, suffixLength);
+    }
+
+
+    @Override
+    public @NotNull String format(int lineNumber, boolean markedLine)
+    {
+      for(int n = lineNumberWidth; n-- > 0; lineNumber /= 10)
+      {
+        chars[prefixLength + n] = n < lineNumberWidth - 1 && lineNumber == 0
+            ? paddingChar
+            : (char)((lineNumber % 10) + '0');
+      }
+
+      return new String(chars);
     }
   }
 }
