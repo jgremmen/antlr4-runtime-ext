@@ -1,4 +1,11 @@
-/.gradle/
-/gradle.properties
 /.build/
+/.gradle/
+
 /.idea/modules/
+/.idea/vcs.xml
+/.idea/uiDesigner.xml
+/.idea/modules.xml
+/.idea/gradle.xml
+/.idea/jarRepositories.xml
+
+gradle.properties
