@@ -19,7 +19,6 @@ import de.sayayi.lib.antlr4.syntax.GenericSyntaxErrorFormatter;
 import de.sayayi.lib.antlr4.syntax.SyntaxErrorFormatter;
 import de.sayayi.lib.antlr4.walker.Walker;
 import org.antlr.v4.runtime.*;
-import org.antlr.v4.runtime.misc.Interval;
 import org.antlr.v4.runtime.tree.ParseTreeListener;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.jetbrains.annotations.Contract;
@@ -70,11 +69,11 @@ public abstract class AbstractAntlr4Parser
       {
         if (offendingSymbol == null && recognizer instanceof Lexer)
         {
-          var lexer = (Lexer)recognizer;
-          var inputStream = lexer.getInputStream();
+          final var lexer = (Lexer)recognizer;
+          final var inputStream = lexer.getInputStream();
 
-          offendingSymbol = new LexerPositionToken(line, charPositionInLine,
-              lexer._tokenStartCharIndex, inputStream.index(), inputStream);
+          offendingSymbol =
+              new LocationToken(inputStream, line, charPositionInLine, lexer._tokenStartCharIndex, inputStream.index());
         }
 
         AbstractAntlr4Parser.this.syntaxError(analyseStartStopToken((Token)offendingSymbol, ex), msg, ex);
@@ -83,13 +82,13 @@ public abstract class AbstractAntlr4Parser
 
     if (lexer instanceof Lexer)
     {
-      var antlr4Lexer = (Lexer)lexer;
+      final var antlr4Lexer = (Lexer)lexer;
 
       antlr4Lexer.removeErrorListener(ConsoleErrorListener.INSTANCE);  // console polluter
       antlr4Lexer.addErrorListener(errorListener);
     }
 
-    var parser = parserSupplier.apply(lexer);
+    final var parser = parserSupplier.apply(lexer);
 
     parser.removeErrorListener(ConsoleErrorListener.INSTANCE);  // console polluter
     parser.addErrorListener(errorListener);
@@ -171,8 +170,8 @@ public abstract class AbstractAntlr4Parser
   @Contract("_, _, _ -> fail")
   private void syntaxError(@NotNull Token[] startStopToken, @NotNull String errorMsg, Exception cause)
   {
-    var startToken = startStopToken[0];
-    var stopToken = startStopToken[1];
+    final var startToken = startStopToken[0];
+    final var stopToken = startStopToken[1];
 
     throw createException(startToken, stopToken,
         syntaxErrorFormatter.format(startToken, stopToken, cause), errorMsg, cause);
@@ -192,89 +191,6 @@ public abstract class AbstractAntlr4Parser
     @Contract(pure = true)
     default @NotNull Walker getWalker() {
       return WALK_FULL_RECURSIVE;
-    }
-  }
-
-
-
-
-  private static final class LexerPositionToken implements Token
-  {
-    private final int line;
-    private final int charPositionInLine;
-    private final int startIndex;
-    private final int stopIndex;
-    private final CharStream inputStream;
-
-
-    public LexerPositionToken(int line, int charPositionInLine, int startIndex, int stopIndex,
-                              @NotNull CharStream inputStream)
-    {
-      this.line = line;
-      this.charPositionInLine = charPositionInLine;
-      this.startIndex = startIndex;
-      this.stopIndex = stopIndex;
-      this.inputStream = inputStream;
-    }
-
-
-    @Override
-    public int getLine() {
-      return line;
-    }
-
-
-    @Override
-    public int getCharPositionInLine() {
-      return charPositionInLine;
-    }
-
-
-    @Override
-    public int getStartIndex() {
-      return startIndex;
-    }
-
-
-    @Override
-    public int getStopIndex() {
-      return stopIndex;
-    }
-
-
-    @Override
-    public CharStream getInputStream() {
-      return inputStream;
-    }
-
-
-    @Override
-    public String getText() {
-      return inputStream.getText(new Interval(startIndex, stopIndex));
-    }
-
-
-    @Override
-    public int getType() {
-      return INVALID_TYPE;
-    }
-
-
-    @Override
-    public int getChannel() {
-      return DEFAULT_CHANNEL;
-    }
-
-
-    @Override
-    public int getTokenIndex() {
-      return -1;
-    }
-
-
-    @Override
-    public TokenSource getTokenSource() {
-      return null;
     }
   }
 }
