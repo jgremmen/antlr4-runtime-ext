@@ -36,7 +36,7 @@ final class ParserRuleContextNode
   {
     this.parserRuleContext = parserRuleContext;
 
-    var childList = parserRuleContext.children;
+    final var childList = parserRuleContext.children;
 
     childCount = childList == null ? 0 : childList.size();
     index = 0;

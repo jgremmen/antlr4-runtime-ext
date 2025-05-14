@@ -64,32 +64,32 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
   @Override
   public @NotNull String format(@NotNull Token startToken, @NotNull Token stopToken, Exception cause)
   {
-    var inputStream = startToken.getInputStream();
-    var startStopLocation = getStartStopLocation(startToken, stopToken);
+    final var inputStream = startToken.getInputStream();
+    final var startStopLocation = getStartStopLocation(startToken, stopToken);
 
     if (startStopLocation == null || inputStream == null)
       return formatForMissingTokenLocation(cause);
 
-    var startLocation = startStopLocation[0];
-    var stopLocation = startStopLocation[1];
-    var startLine0Based = startLocation.line - 1;
-    var stopLine0Based = stopLocation.line - 1;
+    final var startLocation = startStopLocation[0];
+    final var stopLocation = startStopLocation[1];
+    final var startLine0Based = startLocation.line - 1;
+    final var stopLine0Based = stopLocation.line - 1;
 
-    var lines = inputStream
+    final var lines = inputStream
         .getText(Interval.of(0, inputStream.size() - 1))
         .split("\r?\n");
-    var formatStopLine0Based = min(stopLine0Based + showLinesAfter, lines.length - 1);
+    final var formatStopLine0Based = min(stopLine0Based + showLinesAfter, lines.length - 1);
 
-    var lineNumberFormatter = getLineNumberFormatter(lines.length, formatStopLine0Based + 1);
-    var lineNumberFormatLength = lineNumberFormatter.format(1, false).length();
-    var text = new StringBuilder();
+    final var lineNumberFormatter = getLineNumberFormatter(lines.length, formatStopLine0Based + 1);
+    final var lineNumberFormatLength = lineNumberFormatter.format(1, false).length();
+    final var text = new StringBuilder();
 
     for(int l = max(startLine0Based - showLinesBefore, 0); l <= formatStopLine0Based; l++)
     {
-      var line = lines[l];
-      var lineChars = getLineCharacters(line);
+      final var line = lines[l];
+      final var lineChars = getLineCharacters(line);
+      final var markedLine = l >= startLine0Based && l <= stopLine0Based;
       var lineLength = lineChars.length;
-      var markedLine = l >= startLine0Based && l <= stopLine0Based;
 
       text.append(prefix).append(lineNumberFormatter.format(l + 1, markedLine)).append(lineChars).append('\n');
 
@@ -102,8 +102,8 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
         if (stopLine0Based == l)
           lineLength = max(adjustLocation(lineChars, stopLocation.charPositionInLine) + 1, lineLength);
 
+        final var marker = getMarker();
         var printMarker = false;
-        var marker = getMarker();
 
         for(int c = -lineNumberFormatLength;
             c < lineLength && !(stopLine0Based == l && c > stopLocation.charPositionInLine);
@@ -130,7 +130,7 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
   @Contract(pure = true)
   private char[] getLineCharacters(@NotNull String line)
   {
-    var s = new StringBuilder();
+    final var s = new StringBuilder();
 
     line = trimRight(line);
 
@@ -196,7 +196,6 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
 
     return new DefaultLineNumberFormatter(digits, '0', null, ": ");
   }
-
 
 
   @Contract(pure = true)
@@ -410,7 +409,7 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
 
 
     @Override
-    public @NotNull String format(int lineNumber, boolean markedLine)
+    public @NotNull String format(@Range(from = 1, to = MAX_VALUE) int lineNumber, boolean markedLine)
     {
       for(int n = lineNumberWidth; n-- > 0; lineNumber /= 10)
       {

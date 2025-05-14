@@ -28,7 +28,7 @@ import org.jetbrains.annotations.NotNull;
  * @author Jeroen Gremmen
  * @since 0.5.3
  */
-public final class LocationToken implements Token
+public class LocationToken implements Token
 {
   private final CharStream inputStream;
   private final int line;

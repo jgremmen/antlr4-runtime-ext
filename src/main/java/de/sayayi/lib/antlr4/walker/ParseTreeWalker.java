@@ -42,13 +42,12 @@ final class ParseTreeWalker
   @Contract(mutates = "param2")
   static void walkExitsOnlyRecursive(@NotNull ParseTreeListener listener, @NotNull ParserRuleContext parserRuleContext)
   {
-    var children = parserRuleContext.children;
+    final var children = parserRuleContext.children;
+
     if (children != null)
-    {
       for(var parseTreeChild: children)
         if (parseTreeChild instanceof ParserRuleContext)
           walkExitsOnlyRecursive(listener, (ParserRuleContext)parseTreeChild);
-    }
 
     parserRuleContext.exitRule(listener);
   }
@@ -60,12 +59,12 @@ final class ParseTreeWalker
   @Contract(mutates = "param2")
   static void walkExitsOnlyIterative(@NotNull ParseTreeListener listener, @NotNull ParserRuleContext parserRuleContext)
   {
-    var nodeStack = new ArrayDeque<ParserRuleContextNode>();
+    final var nodeStack = new ArrayDeque<ParserRuleContextNode>();
     nodeStack.addFirst(new ParserRuleContextNode(parserRuleContext));
 
     for(ParseTree childNode; !nodeStack.isEmpty();)
     {
-      var parentNode = nodeStack.peekFirst();
+      final var parentNode = nodeStack.peekFirst();
 
       if ((childNode = parentNode.getNextChild()) == null)
       {
@@ -84,13 +83,12 @@ final class ParseTreeWalker
   {
     parserRuleContext.enterRule(listener);
 
-    var children = parserRuleContext.children;
+    final var children = parserRuleContext.children;
+
     if (children != null)
-    {
       for(var parseTreeChild: children)
         if (parseTreeChild instanceof ParserRuleContext)
           walkEnterAndExitsOnlyRecursive(listener, (ParserRuleContext)parseTreeChild);
-    }
 
     parserRuleContext.exitRule(listener);
   }
@@ -103,12 +101,13 @@ final class ParseTreeWalker
   static void walkEnterAndExitsOnlyIterative(@NotNull ParseTreeListener listener,
                                              @NotNull ParserRuleContext parserRuleContext)
   {
-    var nodeStack = new ArrayDeque<ParserRuleContextNode>();
+    final var nodeStack = new ArrayDeque<ParserRuleContextNode>();
     nodeStack.addFirst(new ParserRuleContextNode(parserRuleContext));
 
     for(ParseTree childNode; !nodeStack.isEmpty();)
     {
-      var parentNode = nodeStack.peekFirst();
+      final var parentNode = nodeStack.peekFirst();
+
       if (parentNode.isFirst())
         parentNode.parserRuleContext.enterRule(listener);
 
