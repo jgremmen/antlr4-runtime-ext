@@ -38,6 +38,7 @@ import static java.util.Objects.requireNonNull;
 public abstract class AbstractAntlr4Parser
 {
   private final SyntaxErrorFormatter syntaxErrorFormatter;
+  private final boolean keepConsoleErrorListeners;
 
 
   protected AbstractAntlr4Parser() {
@@ -46,7 +47,18 @@ public abstract class AbstractAntlr4Parser
 
 
   protected AbstractAntlr4Parser(@NotNull SyntaxErrorFormatter syntaxErrorFormatter) {
+    this(syntaxErrorFormatter, false);
+  }
+
+
+  /**
+   * @since 0.5.3
+   */
+  protected AbstractAntlr4Parser(@NotNull SyntaxErrorFormatter syntaxErrorFormatter,
+                                 boolean keepConsoleErrorListeners)
+  {
     this.syntaxErrorFormatter = syntaxErrorFormatter;
+    this.keepConsoleErrorListeners = keepConsoleErrorListeners;
   }
 
 
@@ -58,6 +70,32 @@ public abstract class AbstractAntlr4Parser
   }
 
 
+  /**
+   * Parse the input using the given lexer and parser supplier.
+   * <p>
+   * This method will use the {@code parserSupplier} to create a parser instance based on the provided {@code lexer}
+   * and invokes the {@code ruleExecutor}. The result from the rule executor is returned.
+   * <p>
+   * Syntax errors are handled appropriately and always result in an exception being thrown.
+   * <p>
+   * By default, the {@link ConsoleErrorListener}s automatically added by Antlr4 to the lexer and parser instances
+   * are removed as they pollute the console output and do not add any value in complex application scenarios.
+   * If these console error listeners should be kept, set the {@code keepConsoleErrorListeners} constructor parameter
+   * to {@code true}.
+   *
+   * @param lexer           lexer instance, not {@code null}
+   * @param parserSupplier  parser supplier, not {@code null}
+   * @param ruleExecutor    rule executor, not {@code null}
+   *
+   * @return  parser rule context returned by the executed rule, never {@code null}
+   *
+   * @param <L>  TokenSource type, usually the generated {@code Lexer} type
+   * @param <P>  Parser type, usually the generated {@code Parser} type
+   * @param <C>  ParserRuleContext type returned by the executed rule
+   *
+   * @see #AbstractAntlr4Parser(SyntaxErrorFormatter, boolean)
+   * @see #createException(Token, Token, String, String, Exception)
+   */
   @Contract(value = "_, _, _ -> new", mutates = "param1")
   protected <L extends TokenSource,P extends Parser,C extends ParserRuleContext>
       @NotNull C parse(@NotNull L lexer, @NotNull Function<L,P> parserSupplier, @NotNull Function<P,C> ruleExecutor)
@@ -84,13 +122,17 @@ public abstract class AbstractAntlr4Parser
     {
       final var antlr4Lexer = (Lexer)lexer;
 
-      antlr4Lexer.removeErrorListener(ConsoleErrorListener.INSTANCE);  // console polluter
+      if (!keepConsoleErrorListeners)
+        antlr4Lexer.removeErrorListener(ConsoleErrorListener.INSTANCE);
+
       antlr4Lexer.addErrorListener(errorListener);
     }
 
     final var parser = parserSupplier.apply(lexer);
 
-    parser.removeErrorListener(ConsoleErrorListener.INSTANCE);  // console polluter
+    if (!keepConsoleErrorListeners)
+      parser.removeErrorListener(ConsoleErrorListener.INSTANCE);
+
     parser.addErrorListener(errorListener);
 
     return requireNonNull(ruleExecutor.apply(parser));
@@ -131,36 +173,117 @@ public abstract class AbstractAntlr4Parser
   }
 
 
+  /**
+   * Report a syntax error for the given parser rule context.
+   * <p>
+   * The parser rule context and error message are used to create a syntax error message using the configured
+   * {@link SyntaxErrorFormatter}.
+   * <p>
+   * This method will always result in an exception being thrown.
+   *
+   * @param ctx       parser rule context where the syntax error occurred, not {@code null}
+   * @param errorMsg  error message describing the problem, not {@code null}
+   *
+   * @see #createException(Token, Token, String, String, Exception)
+   */
   @Contract("_, _ -> fail")
   protected void syntaxError(@NotNull ParserRuleContext ctx, @NotNull String errorMsg) {
     syntaxError(ctx, errorMsg, null);
   }
 
 
+  /**
+   * Report a syntax error for the given parser rule context.
+   * <p>
+   * The parser rule context and error message are used to create a syntax error message using the configured
+   * {@link SyntaxErrorFormatter}.
+   * <p>
+   * This method will always result in an exception being thrown.
+   *
+   * @param ctx       parser rule context where the syntax error occurred, not {@code null}
+   * @param errorMsg  error message describing the problem, not {@code null}
+   * @param cause     optional exception cause
+   *
+   * @see #createException(Token, Token, String, String, Exception)
+   */
   @Contract("_, _, _ -> fail")
   protected void syntaxError(@NotNull ParserRuleContext ctx, @NotNull String errorMsg, Exception cause) {
     syntaxError(new Token[] { ctx.getStart(), ctx.getStop() }, errorMsg, cause);
   }
 
 
+  /**
+   * Report a syntax error for the given terminal node.
+   * <p>
+   * The terminal node and error message are used to create a syntax error message using the configured
+   * {@link SyntaxErrorFormatter}.
+   * <p>
+   * This method will always result in an exception being thrown.
+   *
+   * @param terminalNode  token where the syntax error occurred, not {@code null}
+   * @param errorMsg      error message describing the problem, not {@code null}
+   *
+   * @see #createException(Token, Token, String, String, Exception)
+   */
   @Contract("_, _ -> fail")
   protected void syntaxError(@NotNull TerminalNode terminalNode, @NotNull String errorMsg) {
     syntaxError(terminalNode, errorMsg, null);
   }
 
 
+  /**
+   * Report a syntax error for the given terminal node.
+   * <p>
+   * The terminal node and error message are used to create a syntax error message using the configured
+   * {@link SyntaxErrorFormatter}.
+   * <p>
+   * This method will always result in an exception being thrown.
+   *
+   * @param terminalNode  token where the syntax error occurred, not {@code null}
+   * @param errorMsg      error message describing the problem, not {@code null}
+   * @param cause        optional exception cause
+   *
+   * @see #createException(Token, Token, String, String, Exception)
+   */
   @Contract("_, _, _ -> fail")
   protected void syntaxError(@NotNull TerminalNode terminalNode, @NotNull String errorMsg, Exception cause) {
     syntaxError(terminalNode.getSymbol(), errorMsg, cause);
   }
 
 
+  /**
+   * Report a syntax error for the given token.
+   * <p>
+   * The token and error message are used to create a syntax error message using the configured
+   * {@link SyntaxErrorFormatter}.
+   * <p>
+   * This method will always result in an exception being thrown.
+   *
+   * @param token     token where the syntax error occurred, not {@code null}
+   * @param errorMsg  error message describing the problem, not {@code null}
+   *
+   * @see #createException(Token, Token, String, String, Exception)
+   */
   @Contract("_, _ -> fail")
   protected void syntaxError(@NotNull Token token, @NotNull String errorMsg) {
     syntaxError(token, errorMsg, null);
   }
 
 
+  /**
+   * Report a syntax error for the given token.
+   * <p>
+   * The token and error message are used to create a syntax error message using the configured
+   * {@link SyntaxErrorFormatter}.
+   * <p>
+   * This method will always result in an exception being thrown.
+   *
+   * @param token     token where the syntax error occurred, not {@code null}
+   * @param errorMsg  error message describing the problem, not {@code null}
+   * @param cause     optional exception cause
+   *
+   * @see #createException(Token, Token, String, String, Exception)
+   */
   @Contract("_, _, _ -> fail")
   protected void syntaxError(@NotNull Token token, @NotNull String errorMsg, Exception cause) {
     syntaxError(new Token[] { token, token }, errorMsg, cause);
@@ -178,6 +301,19 @@ public abstract class AbstractAntlr4Parser
   }
 
 
+  /**
+   * Create a new exception instance for the given start and stop token.
+   * <p>
+   * It is advisable, yet not required, that the created exception uses {@code cause} as its cause method argument.
+   *
+   * @param startToken        first token in the syntax error, not {@code null}
+   * @param stopToken         last token in the syntax error, not {@code null}
+   * @param formattedMessage  formatted syntax error message, not {@code null}
+   * @param errorMsg          message describing the problem, not {@code null}
+   * @param cause             optional exception cause
+   *
+   * @return  new exception instance, never {@code null}
+   */
   @Contract("_, _, _, _, _ -> new")
   protected abstract @NotNull RuntimeException createException(
       @NotNull Token startToken, @NotNull Token stopToken, @NotNull String formattedMessage,
