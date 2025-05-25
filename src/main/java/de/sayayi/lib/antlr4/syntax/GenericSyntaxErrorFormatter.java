@@ -316,7 +316,7 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
     private int charPositionInLine;
 
 
-    private Location(@NotNull Token token)
+    protected Location(@NotNull Token token)
     {
       line = token.getLine();
       charPositionInLine = token.getCharPositionInLine();
@@ -360,7 +360,7 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
      * Format the given {@code lineNumber}. This method must return a string of a fixed length, regardless of the
      * line number being formatted. 
      * <p>
-     * Note: the highest line number must be known in order to create a suitable implementation.
+     * Note: the highest line number must be known to create a suitable implementation.
      * 
      * @param lineNumber  line number to format ({@code 1}..{@code n})
      * @param markedLine  indicates whether the line contains an error marker
