@@ -64,16 +64,16 @@ public abstract class AbstractAntlr4Parser
 
   @Contract(mutates = "param1")
   protected <L extends TokenSource,P extends Parser,C extends ParserRuleContext,R>
-      R parse(@NotNull L lexer, @NotNull Function<L,P> parserSupplier, @NotNull Function<P,C> ruleExecutor,
+      R parse(@NotNull L lexer, @NotNull Function<L,P> parserInstantiator, @NotNull Function<P,C> ruleExecutor,
               @NotNull ParseTreeListener listener, @NotNull Function<C,R> contextResultExtractor) {
-    return contextResultExtractor.apply(walk(listener, parse(lexer, parserSupplier, ruleExecutor)));
+    return contextResultExtractor.apply(walk(listener, parse(lexer, parserInstantiator, ruleExecutor)));
   }
 
 
   /**
    * Parse the input using the given lexer and parser supplier.
    * <p>
-   * This method will use the {@code parserSupplier} to create a parser instance based on the provided {@code lexer}
+   * This method uses the {@code parserSupplier} to create a parser instance based on the provided {@code lexer}
    * and invokes the {@code ruleExecutor}. The result from the rule executor is returned.
    * <p>
    * Syntax errors are handled appropriately and always result in an exception being thrown.
@@ -83,9 +83,9 @@ public abstract class AbstractAntlr4Parser
    * If these console error listeners should be kept, set the {@code keepConsoleErrorListeners} constructor parameter
    * to {@code true}.
    *
-   * @param lexer           lexer instance, not {@code null}
-   * @param parserSupplier  parser supplier, not {@code null}
-   * @param ruleExecutor    rule executor, not {@code null}
+   * @param lexer               lexer instance, not {@code null}
+   * @param parserInstantiator  parser instantiator, not {@code null}
+   * @param ruleExecutor        rule executor, not {@code null}
    *
    * @return  parser rule context returned by the executed rule, never {@code null}
    *
@@ -98,7 +98,7 @@ public abstract class AbstractAntlr4Parser
    */
   @Contract(value = "_, _, _ -> new", mutates = "param1")
   protected <L extends TokenSource,P extends Parser,C extends ParserRuleContext>
-      @NotNull C parse(@NotNull L lexer, @NotNull Function<L,P> parserSupplier, @NotNull Function<P,C> ruleExecutor)
+      @NotNull C parse(@NotNull L lexer, @NotNull Function<L,P> parserInstantiator, @NotNull Function<P,C> ruleExecutor)
   {
     var errorListener = new BaseErrorListener() {
       @Override
@@ -134,7 +134,7 @@ public abstract class AbstractAntlr4Parser
       antlr4Lexer.addErrorListener(errorListener);
     }
 
-    final var parser = parserSupplier.apply(lexer);
+    final var parser = parserInstantiator.apply(lexer);
 
     if (!keepConsoleErrorListeners)
       parser.removeErrorListener(ConsoleErrorListener.INSTANCE);
@@ -145,6 +145,23 @@ public abstract class AbstractAntlr4Parser
   }
 
 
+  /**
+   * Walk the parser rule context using the given {@code listener}.
+   * <p>
+   * By default, the walker used to walk the parser rule context is {@link Walker#WALK_FULL_RECURSIVE}. This works
+   * in all cases but may not be the ideal choice. If the listener is an instance of
+   * {@link WalkerSupplier WalkerSupplier}, the {@link WalkerSupplier#getWalker() WalkerSupplier.getWalker()} method
+   * is used to retrieve the walker.
+   *
+   * @param listener           listener to be used for walking the parser rule context, not {@code null}
+   * @param parserRuleContext  parser rule context to be walked, not {@code null}
+   *
+   * @return  parser rule context, never {@code null}
+   *
+   * @param <C>  parser rule context type
+   *
+   * @see Walker
+   */
   @Contract(value = "_, _ -> param2", mutates = "param2")
   protected <C extends ParserRuleContext>
       @NotNull C walk(@NotNull ParseTreeListener listener, @NotNull C parserRuleContext)
