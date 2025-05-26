@@ -84,24 +84,44 @@ public class LocationToken implements Token
   }
 
 
+  /**
+   * {@inheritDoc}
+   *
+   * @return  {@link #INVALID_TYPE}
+   */
   @Override
   public int getType() {
     return INVALID_TYPE;
   }
 
 
+  /**
+   * {@inheritDoc}
+   *
+   * @return  {@link #DEFAULT_CHANNEL}
+   */
   @Override
   public int getChannel() {
     return DEFAULT_CHANNEL;
   }
 
 
+  /**
+   * {@inheritDoc}
+   *
+   * @return  {@code -1}
+   */
   @Override
   public int getTokenIndex() {
     return -1;
   }
 
 
+  /**
+   * {@inheritDoc}
+   *
+   * @return  {@code null}
+   */
   @Override
   public TokenSource getTokenSource() {
     return null;

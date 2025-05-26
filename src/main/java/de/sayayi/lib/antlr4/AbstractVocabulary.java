@@ -27,7 +27,7 @@ import static org.antlr.v4.runtime.Recognizer.EOF;
 
 
 /**
- * Convenience class for creating a custom vocabulary.
+ * Convenience class for creating custom vocabulary.
  * <p>
  * Example:
  * <pre>

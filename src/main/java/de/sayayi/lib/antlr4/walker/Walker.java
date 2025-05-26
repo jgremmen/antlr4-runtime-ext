@@ -34,7 +34,7 @@ import static de.sayayi.lib.antlr4.walker.ParseTreeWalker.*;
 public enum Walker
 {
   /**
-   * Walk and invoke all rule related methods using recursion.
+   * Walk and invoke all rule-related methods using recursion.
    */
   WALK_FULL_RECURSIVE {
     @Override
@@ -45,7 +45,7 @@ public enum Walker
 
 
   /**
-   * Walk and invoke all rule related methods using the heap.
+   * Walk and invoke all rule-related methods using the heap.
    */
   WALK_FULL_HEAP {
     @Override
@@ -56,9 +56,9 @@ public enum Walker
 
 
   /**
-   * Walk and invoke rule specific exit methods only.
+   * Walk and invoke rule-specific exit methods only.
    * <p>
-   * The following methods are never invoked by this walker:
+   * This walker never invokes the following methods:
    * <ul>
    *   <li>{@link ParseTreeListener#enterEveryRule(ParserRuleContext)}</li>
    *   <li>{@link ParseTreeListener#exitEveryRule(ParserRuleContext)}</li>
@@ -75,9 +75,9 @@ public enum Walker
 
 
   /**
-   * Walk and invoke rule specific exit methods only using the heap.
+   * Walk and invoke rule-specific exit methods only using the heap.
    * <p>
-   * The following methods are never invoked by this walker:
+   * This walker never invokes the following methods:
    * <ul>
    *   <li>{@link ParseTreeListener#enterEveryRule(ParserRuleContext)}</li>
    *   <li>{@link ParseTreeListener#exitEveryRule(ParserRuleContext)}</li>
@@ -96,9 +96,9 @@ public enum Walker
 
 
   /**
-   * Walk and invoke rule specific enter and exit methods only.
+   * Walk and invoke rule-specific enter and exit methods only.
    * <p>
-   * The following methods are never invoked by this walker:
+   * This walker never invokes the following methods:
    * <ul>
    *   <li>{@link ParseTreeListener#enterEveryRule(ParserRuleContext)}</li>
    *   <li>{@link ParseTreeListener#exitEveryRule(ParserRuleContext)}</li>
@@ -115,9 +115,9 @@ public enum Walker
 
 
   /**
-   * Walk and invoke rule specific enter and exit methods only using the heap.
+   * Walk and invoke rule-specific enter and exit methods only using the heap.
    * <p>
-   * The following methods are never invoked by this walker:
+   * This walker never invokes the following methods:
    * <ul>
    *   <li>{@link ParseTreeListener#enterEveryRule(ParserRuleContext)}</li>
    *   <li>{@link ParseTreeListener#exitEveryRule(ParserRuleContext)}</li>
