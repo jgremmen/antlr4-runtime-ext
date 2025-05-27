@@ -109,8 +109,8 @@ final class JsonTestCompiler extends AbstractAntlr4Parser
       if (pairs.size() > 3)
       {
         syntaxError("object size must be <= 3")
-            .withStartToken(pairs.get(3).getStart())
-            .withStopToken(pairs.get(pairs.size() - 1).getStop())
+            .withStart(pairs.get(3))
+            .withStop(pairs.get(pairs.size() - 1))
             .report();
       }
     }
@@ -120,11 +120,7 @@ final class JsonTestCompiler extends AbstractAntlr4Parser
     public void exitPair(PairContext ctx)
     {
       if (ctx.STRING().getText().length() > 4)
-      {
-        syntaxError("string too long")
-            .withContext(ctx)
-            .report();
-      }
+        syntaxError("string too long").with(ctx).report();
     }
   }
 }

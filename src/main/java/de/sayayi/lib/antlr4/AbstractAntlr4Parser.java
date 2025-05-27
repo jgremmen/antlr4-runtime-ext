@@ -20,6 +20,7 @@ import de.sayayi.lib.antlr4.syntax.SyntaxErrorFormatter;
 import de.sayayi.lib.antlr4.walker.Walker;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.ParseTreeListener;
+import org.antlr.v4.runtime.tree.SyntaxTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -117,8 +118,8 @@ public abstract class AbstractAntlr4Parser
         final var boundTokens = analyseStartStopToken((Token)offendingSymbol, ex);
 
         AbstractAntlr4Parser.this.syntaxError(msg)
-            .withStartToken(boundTokens[0])
-            .withStopToken(boundTokens[1])
+            .withStart(boundTokens[0])
+            .withStop(boundTokens[1])
             .withCause(ex)
             .report();
       }
@@ -206,49 +207,8 @@ public abstract class AbstractAntlr4Parser
    * @since 0.5.3
    */
   @Contract(value = "_ -> new", pure = true)
-  protected @NotNull SyntaxErrorBuilder syntaxError(@NotNull String errorMessage)
-  {
-    return new SyntaxErrorBuilder() {
-      private Token startToken;
-      private Token stopToken;
-      private Exception cause;
-
-
-      @Override
-      public @NotNull SyntaxErrorBuilder withStartToken(@NotNull Token token)
-      {
-        startToken = token;
-        return this;
-      }
-
-
-      @Override
-      public @NotNull SyntaxErrorBuilder withStopToken(@NotNull Token token)
-      {
-        stopToken = token;
-        return this;
-      }
-
-
-      @Override
-      public @NotNull SyntaxErrorBuilder withCause(@NotNull Exception cause)
-      {
-        this.cause = cause;
-        return this;
-      }
-
-
-      @Override
-      public void report()
-      {
-        final var formattedMessage = syntaxErrorFormatter.format(
-            requireNonNull(startToken, "start token must be specified"),
-            requireNonNull(stopToken, "stop token must be specified"),
-            cause);
-
-        throw createException(startToken, stopToken, formattedMessage, errorMessage, cause);
-      }
-    };
+  protected @NotNull SyntaxErrorBuilder syntaxError(@NotNull String errorMessage) {
+    return new Builder(errorMessage);
   }
 
 
@@ -289,7 +249,7 @@ public abstract class AbstractAntlr4Parser
   @Contract("_, _, _ -> fail")
   @Deprecated(since = "0.5.3", forRemoval = true)
   protected void syntaxError(@NotNull ParserRuleContext ctx, @NotNull String errorMsg, Exception cause) {
-    syntaxError(errorMsg).withContext(ctx).withCause(cause).report();
+    syntaxError(errorMsg).with(ctx).withCause(cause).report();
   }
 
 
@@ -330,7 +290,7 @@ public abstract class AbstractAntlr4Parser
   @Contract("_, _, _ -> fail")
   @Deprecated(since = "0.5.3", forRemoval = true)
   protected void syntaxError(@NotNull TerminalNode terminalNode, @NotNull String errorMsg, Exception cause) {
-    syntaxError(errorMsg).withTerminalNode(terminalNode).withCause(cause).report();
+    syntaxError(errorMsg).with(terminalNode).withCause(cause).report();
   }
 
 
@@ -371,7 +331,7 @@ public abstract class AbstractAntlr4Parser
   @Contract("_, _, _ -> fail")
   @Deprecated(since = "0.5.3", forRemoval = true)
   protected void syntaxError(@NotNull Token token, @NotNull String errorMsg, Exception cause) {
-    syntaxError(errorMsg).withToken(token).withCause(cause).report();
+    syntaxError(errorMsg).with(token).withCause(cause).report();
   }
 
 
@@ -423,12 +383,26 @@ public abstract class AbstractAntlr4Parser
      *
      * @return  this builder instance, never {@code null}
      *
-     * @see #withContext(ParserRuleContext)
-     * @see #withTerminalNode(TerminalNode)
-     * @see #withToken(Token)
+     * @see #with(Token)
+     * @see #with(SyntaxTree)
      */
     @Contract(value = "_ -> this", mutates = "this")
-    @NotNull SyntaxErrorBuilder withStartToken(@NotNull Token token);
+    @NotNull SyntaxErrorBuilder withStart(@NotNull Token token);
+
+
+    /**
+     * Provide the start syntax tree for the syntax error. This method can be used to either set the start token or
+     * modify the start token if it had previously been set.
+     *
+     * @param syntaxTree  start token where the syntax error starts, not {@code null}
+     *
+     * @return  this builder instance, never {@code null}
+     *
+     * @see #with(Token)
+     * @see #with(SyntaxTree)
+     */
+    @Contract(value = "_ -> this", mutates = "this")
+    @NotNull SyntaxErrorBuilder withStart(@NotNull SyntaxTree syntaxTree);
 
 
     /**
@@ -439,12 +413,26 @@ public abstract class AbstractAntlr4Parser
      *
      * @return  this builder instance, never {@code null}
      *
-     * @see #withContext(ParserRuleContext)
-     * @see #withTerminalNode(TerminalNode)
-     * @see #withToken(Token)
+     * @see #with(Token)
+     * @see #with(SyntaxTree)
      */
     @Contract(value = "_ -> this", mutates = "this")
-    @NotNull SyntaxErrorBuilder withStopToken(@NotNull Token token);
+    @NotNull SyntaxErrorBuilder withStop(@NotNull Token token);
+
+
+    /**
+     * Provide the stop token for the syntax error. This method can be used to either set the stop token or
+     * modify the stop token if it had previously been set.
+     *
+     * @param syntaxTree  stop token where the syntax error ends, not {@code null}
+     *
+     * @return  this builder instance, never {@code null}
+     *
+     * @see #with(Token)
+     * @see #with(SyntaxTree)
+     */
+    @Contract(value = "_ -> this", mutates = "this")
+    @NotNull SyntaxErrorBuilder withStop(@NotNull SyntaxTree syntaxTree);
 
 
     /**
@@ -456,47 +444,18 @@ public abstract class AbstractAntlr4Parser
      * @return  this builder instance, never {@code null}
      */
     @Contract(value = "_ -> this", mutates = "this")
-    default @NotNull SyntaxErrorBuilder withToken(@NotNull Token token)
-    {
-      withStartToken(token);
-      withStopToken(token);
-      return this;
-    }
+    @NotNull SyntaxErrorBuilder with(@NotNull Token token);
 
 
     /**
-     * Provide the terminal node for the syntax error. This method assumes the provided terminal node is the exact
-     * location where the syntax error occurred.
+     * Provide the syntax tree node for the syntax error.
      *
-     * @param terminalNode  terminal node where the syntax error occurred, not {@code null}
-     *
-     * @return  this builder instance, never {@code null}
-     *
-     * @see TerminalNode#getSymbol()
-     */
-    @Contract(value = "_ -> this", mutates = "this")
-    default @NotNull SyntaxErrorBuilder withTerminalNode(@NotNull TerminalNode terminalNode) {
-      return withToken(terminalNode.getSymbol());
-    }
-
-
-    /**
-     * Provide the parser rule context for the syntax error. The start and stop tokens are taken from the context.
-     *
-     * @param parserRuleContext  parser rule context where the syntax error occurred, not {@code null}
+     * @param syntaxTree  syntax tree node where the syntax error occurred, not {@code null}
      *
      * @return  this builder instance, never {@code null}
-     *
-     * @see ParserRuleContext#getStart()
-     * @see ParserRuleContext#getStop()
      */
     @Contract(value = "_ -> this", mutates = "this")
-    default @NotNull SyntaxErrorBuilder withContext(@NotNull ParserRuleContext parserRuleContext)
-    {
-      withStartToken(parserRuleContext.getStart());
-      withStopToken(parserRuleContext.getStop());
-      return this;
-    }
+    @NotNull SyntaxErrorBuilder with(@NotNull SyntaxTree syntaxTree);
 
 
     /**
@@ -523,5 +482,122 @@ public abstract class AbstractAntlr4Parser
      */
     @Contract("-> fail")
     void report();
+  }
+
+
+
+
+  private final class Builder implements SyntaxErrorBuilder
+  {
+    private final String errorMessage;
+    private Token startToken;
+    private Token stopToken;
+    private Exception cause;
+
+
+    private Builder(@NotNull String errorMessage) {
+      this.errorMessage = errorMessage;
+    }
+
+
+    @Override
+    public @NotNull SyntaxErrorBuilder withStart(@NotNull Token token)
+    {
+      startToken = token;
+
+      return this;
+    }
+
+
+    @Override
+    public @NotNull SyntaxErrorBuilder withStart(@NotNull SyntaxTree syntaxTree)
+    {
+      if (syntaxTree instanceof ParserRuleContext)
+        startToken = ((ParserRuleContext)syntaxTree).getStart();
+      else if (syntaxTree instanceof TerminalNode)
+        startToken = ((TerminalNode)syntaxTree).getSymbol();
+      else
+        throw new IllegalArgumentException("unsupported syntax tree type: " + syntaxTree.getClass().getName());
+
+      return this;
+    }
+
+
+    @Override
+    public @NotNull SyntaxErrorBuilder withStop(@NotNull Token token)
+    {
+      stopToken = token;
+
+      return this;
+    }
+
+
+    @Override
+    public @NotNull SyntaxErrorBuilder withStop(@NotNull SyntaxTree syntaxTree)
+    {
+      if (syntaxTree instanceof ParserRuleContext)
+        stopToken = ((ParserRuleContext)syntaxTree).getStop();
+      else if (syntaxTree instanceof TerminalNode)
+        stopToken = ((TerminalNode)syntaxTree).getSymbol();
+      else
+        throw new IllegalArgumentException("unsupported syntax tree type: " + syntaxTree.getClass().getName());
+
+      return this;
+    }
+
+
+    @Override
+    public @NotNull SyntaxErrorBuilder with(@NotNull Token token)
+    {
+      startToken = token;
+      stopToken = token;
+
+      return this;
+    }
+
+
+    @Override
+    public @NotNull SyntaxErrorBuilder with(@NotNull SyntaxTree syntaxTree)
+    {
+      if (syntaxTree instanceof ParserRuleContext)
+      {
+        final var parserRuleContext = (ParserRuleContext)syntaxTree;
+
+        startToken = parserRuleContext.getStart();
+        stopToken = parserRuleContext.getStart();
+      }
+      else if (syntaxTree instanceof TerminalNode)
+      {
+        final var terminalNode = (TerminalNode)syntaxTree;
+
+        startToken = terminalNode.getSymbol();
+        stopToken = terminalNode.getSymbol();
+      }
+      else
+        throw new IllegalArgumentException("unsupported syntax tree type: " + syntaxTree.getClass().getName());
+
+      return this;
+    }
+
+
+    @Override
+    public @NotNull SyntaxErrorBuilder withCause(@NotNull Exception cause)
+    {
+      this.cause = cause;
+
+      return this;
+    }
+
+
+    @Override
+    public void report()
+    {
+      final var formattedMessage = syntaxErrorFormatter.format(
+          requireNonNull(startToken, "start token must be specified"),
+          requireNonNull(stopToken, "stop token must be specified"),
+          cause);
+
+      throw createException(startToken, stopToken, formattedMessage, errorMessage, cause);
+    }
   }
 }
