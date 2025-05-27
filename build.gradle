@@ -7,7 +7,9 @@ plugins {
 }
 
 
-layout.buildDirectory = ".build"
+//noinspection GrDeprecatedAPIUsage
+project.buildDir = file('.build')
+layout.buildDirectory = '.build'
 
 
 description 'ANTLR4 Runtime Extensions'
@@ -62,6 +64,10 @@ dependencies {
 
   antlr "org.antlr:antlr4:${antlr4Version}"
 }
+
+
+compileTestJava.dependsOn generateTestGrammarSource
+jar.dependsOn test
 
 
 def resolvedAntlr4RuntimeVersion = configurations
@@ -205,4 +211,11 @@ signing {
 
 wrapper {
   distributionType = Wrapper.DistributionType.BIN
+}
+
+
+idea {
+  module {
+    generatedSourceDirs += generateTestGrammarSource.outputDirectory
+  }
 }
