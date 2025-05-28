@@ -564,7 +564,7 @@ public abstract class AbstractAntlr4Parser
         final var parserRuleContext = (ParserRuleContext)syntaxTree;
 
         startToken = parserRuleContext.getStart();
-        stopToken = parserRuleContext.getStart();
+        stopToken = parserRuleContext.getStop();
       }
       else if (syntaxTree instanceof TerminalNode)
       {
