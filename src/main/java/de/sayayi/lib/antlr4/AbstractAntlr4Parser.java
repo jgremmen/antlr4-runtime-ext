@@ -460,6 +460,31 @@ public abstract class AbstractAntlr4Parser
    * @since 0.5.5
    */
   @Contract(pure = true)
+  protected @NotNull String createNoViableAlternativeMessage(@NotNull Parser parser, @NotNull Token startToken,
+                                                             @NotNull Token offendingToken)
+  {
+    final String input;
+
+    if (isEOFToken(startToken))
+      input = "<EOF>";
+    else
+    {
+      input = "'" + parser
+          .getInputStream()
+          .getText(startToken, offendingToken)
+          .replace("\n", "\\n")
+          .replace("\r", "\\r")
+          .replace("\t", "\\t") + "'";
+    }
+
+    return "no viable alternative at input " + input;
+  }
+
+
+  /**
+   * @since 0.5.5
+   */
+  @Contract(pure = true)
   protected @NotNull String getEOFTokenDisplayText() {
     return "<EOF>";
   }
@@ -797,6 +822,16 @@ public abstract class AbstractAntlr4Parser
         parser.notifyErrorListeners(unwantedToken,
             createUnwantedTokenMessage(parser, unwantedToken, getExpectedTokens(parser)), null);
       }
+    }
+
+
+    @Override
+    protected void reportNoViableAlternative(Parser parser, NoViableAltException ex)
+    {
+      final var offendingToken = ex.getOffendingToken();
+
+      parser.notifyErrorListeners(offendingToken,
+          createNoViableAlternativeMessage(parser, ex.getStartToken(), offendingToken), ex);
     }
 
 
