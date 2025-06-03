@@ -444,6 +444,15 @@ public abstract class AbstractAntlr4Parser
 
 
   /**
+   * Create a message for the case where the parser could not decide which of two or more paths to take based
+   * upon the remaining input.
+   *
+   * @param parser          parser instance, not {@code null}
+   * @param startToken      starting token of the offending input, not {@code null}
+   * @param offendingToken  token where the parser failed to decide which path to take, not {@code null}
+   *
+   * @return  message, describing the problem, never {@code null}
+   *
    * @since 0.5.5
    */
   @Contract(pure = true)
@@ -498,6 +507,9 @@ public abstract class AbstractAntlr4Parser
   }
 
 
+  /**
+   * @since 0.5.5
+   */
   @Contract(pure = true)
   protected @NotNull String getQuotedDisplayText(@NotNull String text)
   {
