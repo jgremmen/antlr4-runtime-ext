@@ -402,21 +402,8 @@ public abstract class AbstractAntlr4Parser
    * @since 0.5.5
    */
   @Contract(pure = true)
-  protected @NotNull String createTokenRecognitionMessage(@NotNull Lexer lexer, @NotNull String text, boolean hasEOF)
-  {
-    final var msg = new StringBuilder("token recognition error at: ");
-
-    if (hasEOF)
-      msg.append(getEOFTokenDisplayText());
-    else
-    {
-      msg.append('\'').append(text
-          .replace("\n", "\\n")
-          .replace("\r", "\\r")
-          .replace("\t", "\\t")).append('\'');
-    }
-
-    return msg.toString();
+  protected @NotNull String createTokenRecognitionMessage(@NotNull Lexer lexer, @NotNull String text, boolean hasEOF) {
+    return "token recognition error at: " + (hasEOF ? getEOFTokenDisplayText() : getQuotedDisplayText(text));
   }
 
 
@@ -463,19 +450,9 @@ public abstract class AbstractAntlr4Parser
   protected @NotNull String createNoViableAlternativeMessage(@NotNull Parser parser, @NotNull Token startToken,
                                                              @NotNull Token offendingToken)
   {
-    final String input;
-
-    if (isEOFToken(startToken))
-      input = "<EOF>";
-    else
-    {
-      input = "'" + parser
-          .getInputStream()
-          .getText(startToken, offendingToken)
-          .replace("\n", "\\n")
-          .replace("\r", "\\r")
-          .replace("\t", "\\t") + "'";
-    }
+    final var input = isEOFToken(startToken)
+        ? "<EOF>"
+        : getQuotedDisplayText(parser.getInputStream().getText(startToken, offendingToken));
 
     return "no viable alternative at input " + input;
   }
@@ -517,6 +494,13 @@ public abstract class AbstractAntlr4Parser
     else if ((text = token.getText()) == null)
       return "<" + tokenType + '>';
 
+    return getQuotedDisplayText(text);
+  }
+
+
+  @Contract(pure = true)
+  protected @NotNull String getQuotedDisplayText(@NotNull String text)
+  {
     return '\'' + text
         .replace("\n", "\\n")
         .replace("\r", "\\r")
