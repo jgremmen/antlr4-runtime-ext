@@ -183,7 +183,7 @@ public abstract class AbstractAntlr4Parser
   /**
    * Walk the parser rule context using the given {@code listener}.
    * <p>
-   * By default, the walker used to walk the parser rule context is {@link Walker#WALK_FULL_RECURSIVE}. This works
+   * By default, the walker used to walk the parser rule context is {@link Walker#WALK_FULL_HEAP}. This works
    * in all cases but may not be the ideal choice. If the listener is an instance of
    * {@link WalkerSupplier WalkerSupplier}, the {@link WalkerSupplier#getWalker() WalkerSupplier.getWalker()} method
    * is used to retrieve the walker.
