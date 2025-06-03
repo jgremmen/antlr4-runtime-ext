@@ -31,6 +31,7 @@ import static de.sayayi.lib.antlr4.walker.ParseTreeWalker.*;
  * @author Jeroen Gremmen
  * @since 0.1.0
  */
+@SuppressWarnings("removal")
 public enum Walker
 {
   /**
