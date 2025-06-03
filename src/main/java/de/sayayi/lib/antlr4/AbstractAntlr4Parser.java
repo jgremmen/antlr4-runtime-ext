@@ -424,6 +424,18 @@ public abstract class AbstractAntlr4Parser
    * @since 0.5.5
    */
   @Contract(pure = true)
+  protected @NotNull String createInputMismatchMessage(@NotNull Parser parser, @NotNull IntervalSet expectedTokens,
+                                                       Token mismatchLocationNearToken)
+  {
+    return "mismatched input " + getTokenDisplayText(parser, mismatchLocationNearToken) +
+        " expecting " + expectedTokens.toString(parser.getVocabulary());
+  }
+
+
+  /**
+   * @since 0.5.5
+   */
+  @Contract(pure = true)
   protected @NotNull String createMissingTokenMessage(@NotNull Parser parser, @NotNull IntervalSet expectedTokens,
                                                       Token missingLocationNearToken)
   {
@@ -441,7 +453,6 @@ public abstract class AbstractAntlr4Parser
   {
     return "extraneous input " + getTokenDisplayText(parser, unwantedToken) + " expecting " +
         expectedTokens.toString(parser.getVocabulary());
-
   }
 
 
@@ -750,6 +761,16 @@ public abstract class AbstractAntlr4Parser
 
 
     @Override
+    protected void reportInputMismatch(Parser parser, InputMismatchException ex)
+    {
+      final var mismatchLocationNearToken = ex.getOffendingToken();
+
+      parser.notifyErrorListeners(mismatchLocationNearToken,
+          createInputMismatchMessage(parser, ex.getExpectedTokens(), mismatchLocationNearToken), ex);
+    }
+
+
+    @Override
     protected void reportMissingToken(Parser parser)
     {
       if (!inErrorRecoveryMode(parser))
@@ -765,16 +786,16 @@ public abstract class AbstractAntlr4Parser
 
 
     @Override
-    protected void reportUnwantedToken(Parser recognizer)
+    protected void reportUnwantedToken(Parser parser)
     {
-      if (!inErrorRecoveryMode(recognizer))
+      if (!inErrorRecoveryMode(parser))
       {
-        beginErrorCondition(recognizer);
+        beginErrorCondition(parser);
 
-        final var unwantedToken = recognizer.getCurrentToken();
+        final var unwantedToken = parser.getCurrentToken();
 
         parser.notifyErrorListeners(unwantedToken,
-            createUnwantedTokenMessage(parser, unwantedToken, getExpectedTokens(recognizer)), null);
+            createUnwantedTokenMessage(parser, unwantedToken, getExpectedTokens(parser)), null);
       }
     }
 
