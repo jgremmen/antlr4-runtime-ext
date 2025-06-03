@@ -19,6 +19,8 @@ import de.sayayi.lib.antlr4.syntax.GenericSyntaxErrorFormatter;
 import de.sayayi.lib.antlr4.syntax.SyntaxErrorFormatter;
 import de.sayayi.lib.antlr4.walker.Walker;
 import org.antlr.v4.runtime.*;
+import org.antlr.v4.runtime.misc.Interval;
+import org.antlr.v4.runtime.misc.IntervalSet;
 import org.antlr.v4.runtime.tree.ParseTreeListener;
 import org.antlr.v4.runtime.tree.SyntaxTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
@@ -27,8 +29,9 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Function;
 
-import static de.sayayi.lib.antlr4.walker.Walker.WALK_FULL_RECURSIVE;
+import static de.sayayi.lib.antlr4.walker.Walker.WALK_FULL_HEAP;
 import static java.util.Objects.requireNonNull;
+import static org.antlr.v4.runtime.Token.EOF;
 
 
 /**
@@ -64,6 +67,7 @@ public abstract class AbstractAntlr4Parser
 
 
   @Contract(mutates = "param1")
+  @SuppressWarnings("UnusedReturnValue")
   protected <L extends TokenSource,P extends Parser,C extends ParserRuleContext,R>
       R parse(@NotNull L lexer, @NotNull Function<L,P> parserInstantiator, @NotNull Function<P,C> ruleExecutor,
               @NotNull ParseTreeListener listener, @NotNull Function<C,R> contextResultExtractor) {
@@ -101,30 +105,7 @@ public abstract class AbstractAntlr4Parser
   protected <L extends TokenSource,P extends Parser,C extends ParserRuleContext>
       @NotNull C parse(@NotNull L lexer, @NotNull Function<L,P> parserInstantiator, @NotNull Function<P,C> ruleExecutor)
   {
-    var errorListener = new BaseErrorListener() {
-      @Override
-      public void syntaxError(@NotNull Recognizer<?,?> recognizer, Object offendingSymbol, int line,
-                              int charPositionInLine, String msg, RecognitionException ex)
-      {
-        if (offendingSymbol == null && recognizer instanceof Lexer)
-        {
-          final var lexer = (Lexer)recognizer;
-          final var inputStream = lexer.getInputStream();
-
-          offendingSymbol =
-              new LocationToken(inputStream, line, charPositionInLine, lexer._tokenStartCharIndex, inputStream.index());
-        }
-
-        final var boundTokens = analyseStartStopToken((Token)offendingSymbol, ex);
-
-        AbstractAntlr4Parser.this.syntaxError(msg)
-            .withStart(boundTokens[0])
-            .withStop(boundTokens[1])
-            .withCause(ex)
-            .report();
-      }
-    };
-
+    // configure lexer
     if (lexer instanceof Lexer)
     {
       final var antlr4Lexer = (Lexer)lexer;
@@ -132,17 +113,70 @@ public abstract class AbstractAntlr4Parser
       if (!keepConsoleErrorListeners)
         antlr4Lexer.removeErrorListener(ConsoleErrorListener.INSTANCE);
 
-      antlr4Lexer.addErrorListener(errorListener);
+      antlr4Lexer.addErrorListener(new BaseErrorListener() {
+        @Override
+        public void syntaxError(@NotNull Recognizer<?,?> recognizer, Object offendingSymbol, int line,
+                                int charPositionInLine, String msg, RecognitionException ex) {
+          lexerSyntaxError((Lexer)recognizer, line, charPositionInLine, ex);
+        }
+      });
     }
 
+    // create and configure parser
     final var parser = parserInstantiator.apply(lexer);
 
     if (!keepConsoleErrorListeners)
       parser.removeErrorListener(ConsoleErrorListener.INSTANCE);
 
-    parser.addErrorListener(errorListener);
+    parser.setErrorHandler(new ParserErrorHandler(parser));
+    parser.addErrorListener(new BaseErrorListener() {
+      @Override
+      public void syntaxError(@NotNull Recognizer<?,?> recognizer, Object offendingSymbol, int line,
+                              int charPositionInLine, String msg, RecognitionException ex) {
+        parserSyntaxError((Token)offendingSymbol, msg, ex);
+      }
+    });
 
     return requireNonNull(ruleExecutor.apply(parser));
+  }
+
+
+  @Contract("_, _, _, _ -> fail")
+  private void lexerSyntaxError(@NotNull Lexer lexer, int line, int charPositionInLine, RecognitionException ex)
+  {
+    final var inputStream = lexer.getInputStream();
+    final var tokenStartCharIndex = lexer._tokenStartCharIndex;
+
+    var text = inputStream.getText(Interval.of(tokenStartCharIndex, inputStream.index()));
+    final var length = text.length();
+    final var hasEOF = length > 0 && text.codePointAt(length - 1) == EOF;
+
+    if (hasEOF)
+      text = text.substring(0, length - 1);
+
+    syntaxError(createTokenRecognitionMessage(lexer, text, length == 0 || hasEOF))
+        .with(new LocationToken(inputStream, line, charPositionInLine, tokenStartCharIndex, inputStream.index()))
+        .withCause(ex)
+        .report();
+  }
+
+
+  @Contract("_, _, _ -> fail")
+  private void parserSyntaxError(Token token, String msg, RecognitionException ex)
+  {
+    final var syntaxError = syntaxError(msg).withCause(ex);
+
+    if (ex != null)
+    {
+      if ((token = ex.getOffendingToken()) != null)
+        syntaxError.with(token);
+      else
+        syntaxError.with(ex.getCtx());
+    }
+    else if (token != null)
+      syntaxError.with(token);
+
+    syntaxError.report();
   }
 
 
@@ -169,14 +203,24 @@ public abstract class AbstractAntlr4Parser
   {
     (listener instanceof WalkerSupplier
         ? ((WalkerSupplier)listener).getWalker()
-        : WALK_FULL_RECURSIVE)
+        : WALK_FULL_HEAP)
         .walk(listener, parserRuleContext);
 
     return parserRuleContext;
   }
 
 
+  /**
+   * @since 0.5.5
+   */
+  @Contract(pure = true)
+  protected boolean isEOFToken(Token token) {
+    return token != null && token.getType() == EOF;
+  }
+
+
   @Contract(value = "null, null -> fail", pure = true)
+  @Deprecated(since = "0.5.5", forRemoval = true)
   protected @NotNull Token[] analyseStartStopToken(Token offendingSymbol, RecognitionException ex)
   {
     if (ex != null)
@@ -354,13 +398,91 @@ public abstract class AbstractAntlr4Parser
       @NotNull String errorMsg, Exception cause);
 
 
+  /**
+   * @since 0.5.5
+   */
+  @Contract(pure = true)
+  protected @NotNull String createTokenRecognitionMessage(@NotNull Lexer lexer, @NotNull String text, boolean hasEOF)
+  {
+    final var msg = new StringBuilder("token recognition error at: ");
+
+    if (hasEOF)
+      msg.append(getEOFTokenDisplayText());
+    else
+    {
+      msg.append('\'').append(text
+          .replace("\n", "\\n")
+          .replace("\r", "\\r")
+          .replace("\t", "\\t")).append('\'');
+    }
+
+    return msg.toString();
+  }
+
+
+  /**
+   * @since 0.5.5
+   */
+  @Contract(pure = true)
+  protected @NotNull String createMissingTokenMessage(@NotNull Parser parser, @NotNull IntervalSet expectedTokens,
+                                                      Token missingLocationNearToken)
+  {
+    return "missing " + expectedTokens.toString(parser.getVocabulary()) + " at " +
+        getTokenDisplayText(parser, missingLocationNearToken);
+  }
+
+
+  /**
+   * @since 0.5.5
+   */
+  @Contract(pure = true)
+  protected @NotNull String getEOFTokenDisplayText() {
+    return "<EOF>";
+  }
+
+
+  /**
+   * Get the display text for the given token. This method is used to display the token in syntax error messages.
+   *
+   * @param parser  parser instance, not {@code null}
+   * @param token   token to display, may be {@code null}
+   *
+   * @return  token display text, never {@code null}
+   *
+   * @since 0.5.5
+   */
+  @Contract(pure = true)
+  protected @NotNull String getTokenDisplayText(@NotNull Parser parser, Token token)
+  {
+    if (token == null)
+      return "<no token>";
+
+    final var tokenType = token.getType();
+
+    var text = parser.getVocabulary().getDisplayName(tokenType);
+    if (text != null)
+      return text;
+
+    if (isEOFToken(token))
+      return getEOFTokenDisplayText();
+    else if ((text = token.getText()) == null)
+      return "<" + tokenType + '>';
+
+    return '\'' + text
+        .replace("\n", "\\n")
+        .replace("\r", "\\r")
+        .replace("\t", "\\t") +
+        '\'';
+  }
+
+
 
 
   public interface WalkerSupplier extends ParseTreeListener
   {
     @Contract(pure = true)
     default @NotNull Walker getWalker() {
-      return WALK_FULL_RECURSIVE;
+      return WALK_FULL_HEAP;
     }
   }
 
@@ -598,6 +720,40 @@ public abstract class AbstractAntlr4Parser
           cause);
 
       throw createException(startToken, stopToken, formattedMessage, errorMessage, cause);
+    }
+  }
+
+
+
+
+  private final class ParserErrorHandler extends DefaultErrorStrategy
+  {
+    private final Parser parser;
+
+
+    private ParserErrorHandler(@NotNull Parser parser) {
+      this.parser = parser;
+    }
+
+
+    @Override
+    protected void reportMissingToken(Parser parser)
+    {
+      if (!inErrorRecoveryMode(parser))
+      {
+        beginErrorCondition(parser);
+
+        final var token = parser.getCurrentToken();
+
+        parser.notifyErrorListeners(token,
+            createMissingTokenMessage(parser, getExpectedTokens(parser), token), null);
+      }
+    }
+
+
+    @Override
+    protected String getTokenErrorDisplay(Token token) {
+      return getTokenDisplayText(parser, token);
     }
   }
 }

@@ -28,6 +28,15 @@ final class JsonTestCompiler extends AbstractAntlr4Parser
       add(STRING, "<string>", "STRING");
       add(NUMBER, "<number>", "NUMBER");
       add(WS, "<whitespace>", "WS");
+      add(T__0, "'{'", "LBRACE");
+      add(T__1, "','", "COMMA");
+      add(T__2, "'}'", "RBRACE");
+      add(T__3, "':'", "COLON");
+      add(T__4, "'['", "LBRACKET");
+      add(T__5, "']'", "RBRACKET");
+      add(T__6, "'true'", "TRUE");
+      add(T__7, "'false'", "FALSE");
+      add(T__8, "'null'", "NULL");
     }
   };
 
