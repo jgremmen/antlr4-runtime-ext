@@ -436,6 +436,19 @@ public abstract class AbstractAntlr4Parser
    * @since 0.5.5
    */
   @Contract(pure = true)
+  protected @NotNull String createUnwantedTokenMessage(@NotNull Parser parser, @NotNull Token unwantedToken,
+                                                       @NotNull IntervalSet expectedTokens)
+  {
+    return "extraneous input " + getTokenDisplayText(parser, unwantedToken) + " expecting " +
+        expectedTokens.toString(parser.getVocabulary());
+
+  }
+
+
+  /**
+   * @since 0.5.5
+   */
+  @Contract(pure = true)
   protected @NotNull String getEOFTokenDisplayText() {
     return "<EOF>";
   }
@@ -743,10 +756,25 @@ public abstract class AbstractAntlr4Parser
       {
         beginErrorCondition(parser);
 
-        final var token = parser.getCurrentToken();
+        final var missingLocationNearToken = parser.getCurrentToken();
 
-        parser.notifyErrorListeners(token,
-            createMissingTokenMessage(parser, getExpectedTokens(parser), token), null);
+        parser.notifyErrorListeners(missingLocationNearToken,
+            createMissingTokenMessage(parser, getExpectedTokens(parser), missingLocationNearToken), null);
+      }
+    }
+
+
+    @Override
+    protected void reportUnwantedToken(Parser recognizer)
+    {
+      if (!inErrorRecoveryMode(recognizer))
+      {
+        beginErrorCondition(recognizer);
+
+        final var unwantedToken = recognizer.getCurrentToken();
+
+        parser.notifyErrorListeners(unwantedToken,
+            createUnwantedTokenMessage(parser, unwantedToken, getExpectedTokens(recognizer)), null);
       }
     }
 
