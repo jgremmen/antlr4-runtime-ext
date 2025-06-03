@@ -36,6 +36,7 @@ public enum Walker
   /**
    * Walk and invoke all rule-related methods using recursion.
    */
+  @Deprecated(since = "0.5.4", forRemoval = true)
   WALK_FULL_RECURSIVE {
     @Override
     public void walk(@NotNull ParseTreeListener listener, @NotNull ParserRuleContext parserRuleContext) {
@@ -66,6 +67,7 @@ public enum Walker
    *   <li>{@link ParseTreeListener#visitErrorNode(ErrorNode)}</li>
    * </ul>
    */
+  @Deprecated(since = "0.5.4", forRemoval = true)
   WALK_EXIT_RULES_RECURSIVE {
     @Override
     public void walk(@NotNull ParseTreeListener listener, @NotNull ParserRuleContext parserRuleContext) {
@@ -106,6 +108,7 @@ public enum Walker
    *   <li>{@link ParseTreeListener#visitErrorNode(ErrorNode)}</li>
    * </ul>
    */
+  @Deprecated(since = "0.5.4", forRemoval = true)
   WALK_ENTER_AND_EXIT_RULES_RECURSIVE {
     @Override
     public void walk(@NotNull ParseTreeListener listener, @NotNull ParserRuleContext parserRuleContext) {

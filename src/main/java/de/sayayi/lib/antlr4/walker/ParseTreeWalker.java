@@ -40,6 +40,7 @@ final class ParseTreeWalker
 
 
   @Contract(mutates = "param2")
+  @Deprecated(since = "0.5.4", forRemoval = true)
   static void walkExitsOnlyRecursive(@NotNull ParseTreeListener listener, @NotNull ParserRuleContext parserRuleContext)
   {
     final var children = parserRuleContext.children;
@@ -78,6 +79,7 @@ final class ParseTreeWalker
 
 
   @Contract(mutates = "param2")
+  @Deprecated(since = "0.5.4", forRemoval = true)
   static void walkEnterAndExitsOnlyRecursive(@NotNull ParseTreeListener listener,
                                              @NotNull ParserRuleContext parserRuleContext)
   {
@@ -123,6 +125,7 @@ final class ParseTreeWalker
 
 
   @Contract(mutates = "param2")
+  @Deprecated(since = "0.5.4", forRemoval = true)
   static void walkFullRecursive(@NotNull ParseTreeListener listener, @NotNull ParserRuleContext parserRuleContext) {
     org.antlr.v4.runtime.tree.ParseTreeWalker.DEFAULT.walk(listener, parserRuleContext);
   }
