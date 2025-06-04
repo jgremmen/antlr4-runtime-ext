@@ -97,7 +97,9 @@ public interface SyntaxErrorBuilder
    * @return  this builder instance, never {@code null}
    */
   @Contract(value = "_ -> this", mutates = "this")
-  @NotNull SyntaxErrorBuilder with(@NotNull Token token);
+  default @NotNull SyntaxErrorBuilder with(@NotNull Token token) {
+    return withStart(token).withStop(token);
+  }
 
 
   /**

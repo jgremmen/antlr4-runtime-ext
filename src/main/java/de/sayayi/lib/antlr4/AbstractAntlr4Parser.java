@@ -480,16 +480,6 @@ public abstract class AbstractAntlr4Parser
 
 
     @Override
-    public @NotNull SyntaxErrorBuilder with(@NotNull Token token)
-    {
-      startToken = token;
-      stopToken = token;
-
-      return this;
-    }
-
-
-    @Override
     public @NotNull SyntaxErrorBuilder with(@NotNull SyntaxTree syntaxTree)
     {
       if (syntaxTree instanceof ParserRuleContext)
