@@ -15,6 +15,7 @@
  */
 package de.sayayi.lib.antlr4;
 
+import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.Vocabulary;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -23,11 +24,11 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import static java.util.stream.Collectors.joining;
-import static org.antlr.v4.runtime.Recognizer.EOF;
+import static org.antlr.v4.runtime.Token.EOF;
 
 
 /**
- * Convenience class for creating custom vocabulary.
+ * Convenience class for creating custom vocabularies.
  * <p>
  * Example:
  * <pre>
@@ -43,6 +44,9 @@ import static org.antlr.v4.runtime.Recognizer.EOF;
  *     }
  *   }
  * </pre>
+ * <p>
+ * By default, literal {@code <EOF>} is assigned to the {@link Token#EOF EOF} token but can be overwritten using
+ * {@link #add(int, String, String)}.
  *
  * @author Jeroen Gremmen
  * @since 0.1.0
@@ -50,12 +54,17 @@ import static org.antlr.v4.runtime.Recognizer.EOF;
 public abstract class AbstractVocabulary implements Vocabulary
 {
   private final SortedMap<Integer,Name> vocabulary = new TreeMap<>();
+  private boolean sealed;
 
 
   protected AbstractVocabulary()
   {
+    sealed = false;
+
     add(EOF, "<EOF>", "EOF");
     addTokens();
+
+    sealed = true;
   }
 
 
@@ -75,7 +84,11 @@ public abstract class AbstractVocabulary implements Vocabulary
    * @param symbol     symbolic representation of the token, not {@code null}
    */
   @Contract(mutates = "this")
-  protected void add(int tokenType, @NotNull String literal, @NotNull String symbol) {
+  protected void add(int tokenType, @NotNull String literal, @NotNull String symbol)
+  {
+    if (sealed)
+      throw new IllegalStateException("vocabulary cannot be modified");
+
     vocabulary.put(tokenType, new Name(literal, symbol));
   }
 
