@@ -17,6 +17,7 @@ package de.sayayi.lib.antlr4;
 
 import de.sayayi.lib.antlr4.syntax.GenericSyntaxErrorFormatter;
 import de.sayayi.lib.antlr4.syntax.SyntaxErrorBuilder;
+import de.sayayi.lib.antlr4.syntax.SyntaxErrorException;
 import de.sayayi.lib.antlr4.syntax.SyntaxErrorFormatter;
 import de.sayayi.lib.antlr4.walker.Walker;
 import org.antlr.v4.runtime.*;
@@ -244,6 +245,8 @@ public abstract class AbstractAntlr4Parser
   /**
    * Create a new exception instance for the given start and stop token.
    * <p>
+   * The default implementation returns a {@link SyntaxErrorException} instance.
+   * <p>
    * It is advisable, yet not required, that the created exception uses {@code cause} as its cause method argument.
    *
    * @param startToken        first token in the syntax error, not {@code null}
@@ -255,9 +258,11 @@ public abstract class AbstractAntlr4Parser
    * @return  new exception instance, never {@code null}
    */
   @Contract("_, _, _, _, _ -> new")
-  protected abstract @NotNull RuntimeException createException(
+  protected @NotNull RuntimeException createException(
       @NotNull Token startToken, @NotNull Token stopToken, @NotNull String formattedMessage,
-      @NotNull String errorMsg, Exception cause);
+      @NotNull String errorMsg, Exception cause) {
+    return new SyntaxErrorException(startToken, stopToken, formattedMessage, errorMsg, cause);
+  }
 
 
   /**

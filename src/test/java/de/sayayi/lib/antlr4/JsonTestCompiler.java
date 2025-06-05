@@ -5,7 +5,6 @@ import de.sayayi.lib.antlr4.syntax.SyntaxErrorFormatter;
 import de.sayayi.lib.antlr4.walker.Walker;
 import org.antlr.v4.runtime.BufferedTokenStream;
 import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.Vocabulary;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -57,14 +56,6 @@ final class JsonTestCompiler extends AbstractAntlr4Parser
   @Contract(pure = true)
   public void parseJson(@NotNull String text) {
     parse(new Lexer(text), Parser::new, JSONParser::json, new Listener(), ctx -> null);
-  }
-
-
-  @Override
-  protected @NotNull RuntimeException createException(@NotNull Token startToken, @NotNull Token stopToken,
-                                                      @NotNull String formattedMessage, @NotNull String errorMsg,
-                                                      Exception cause) {
-    return new IllegalArgumentException(formattedMessage, cause);
   }
 
 
