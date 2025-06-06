@@ -377,7 +377,7 @@ public abstract class AbstractAntlr4Parser
 
     final var tokenType = token.getType();
 
-    var text = parser.getVocabulary().getDisplayName(tokenType);
+    var text = token.getText();
     if (text != null)
       return text;
 

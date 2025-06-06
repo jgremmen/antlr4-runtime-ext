@@ -83,7 +83,7 @@ class JsonParserTest
         compiler.parseJson("{\"test\":3}3"));
 
     assertEquals("  {\"test\":3}3\n            ~\n", exception.getFormattedMessage());
-    assertEquals("extraneous input <number> expecting <EOF>", exception.getErrorMessage());
+    assertEquals("extraneous input 3 expecting <EOF>", exception.getErrorMessage());
     assertNull(exception.getCause());
   }
 
