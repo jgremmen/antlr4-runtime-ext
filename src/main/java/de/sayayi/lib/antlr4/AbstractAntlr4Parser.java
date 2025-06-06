@@ -286,7 +286,9 @@ public abstract class AbstractAntlr4Parser
    * @since 0.6.0
    */
   @Contract(pure = true)
-  protected @NotNull String createInputMismatchMessage(@NotNull Parser parser, @NotNull IntervalSet expectedTokens,
+  protected @NotNull String createInputMismatchMessage(@NotNull Parser parser,
+                                                       @NotNull ParserRuleContext parserRuleContext,
+                                                       @NotNull IntervalSet expectedTokens,
                                                        Token mismatchLocationNearToken)
   {
     return "mismatched input " + getTokenDisplayText(parser, mismatchLocationNearToken) +
@@ -547,8 +549,8 @@ public abstract class AbstractAntlr4Parser
     {
       final var mismatchLocationNearToken = ex.getOffendingToken();
 
-      parser.notifyErrorListeners(mismatchLocationNearToken,
-          createInputMismatchMessage(parser, ex.getExpectedTokens(), mismatchLocationNearToken), ex);
+      parser.notifyErrorListeners(mismatchLocationNearToken, createInputMismatchMessage(
+          parser, (ParserRuleContext)ex.getCtx(), ex.getExpectedTokens(), mismatchLocationNearToken), ex);
     }
 
 
