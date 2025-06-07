@@ -392,6 +392,8 @@ public abstract class AbstractAntlr4Parser
   }
 
 
+  private static final char[] QUOTES = "'\"´`¨❝❞”’".toCharArray();
+
   /**
    * Returns the quoted and escaped {@code text}.
    * <p>
@@ -406,11 +408,18 @@ public abstract class AbstractAntlr4Parser
   @Contract(pure = true)
   protected @NotNull String getQuotedDisplayText(@NotNull String text)
   {
-    return '\'' + text
+    // escape
+    text = text
         .replace("\n", "\\n")
         .replace("\r", "\\r")
-        .replace("\t", "\\t") +
-        '\'';
+        .replace("\t", "\\t");
+
+    // quote
+    for(var quote: QUOTES)
+      if (text.indexOf(quote) == -1)
+        return quote + text + quote;
+
+    return text;
   }
 
 
