@@ -39,21 +39,6 @@ final class ParseTreeWalker
   }
 
 
-  @Contract(mutates = "param2")
-  @Deprecated(since = "0.5.4", forRemoval = true)
-  static void walkExitsOnlyRecursive(@NotNull ParseTreeListener listener, @NotNull ParserRuleContext parserRuleContext)
-  {
-    final var children = parserRuleContext.children;
-
-    if (children != null)
-      for(var parseTreeChild: children)
-        if (parseTreeChild instanceof ParserRuleContext)
-          walkExitsOnlyRecursive(listener, (ParserRuleContext)parseTreeChild);
-
-    parserRuleContext.exitRule(listener);
-  }
-
-
   /**
    * @since 0.2.0
    */
@@ -75,24 +60,6 @@ final class ParseTreeWalker
       else if (childNode instanceof ParserRuleContext)
         nodeStack.push(new ParserRuleContextNode((ParserRuleContext)childNode));
     }
-  }
-
-
-  @Contract(mutates = "param2")
-  @Deprecated(since = "0.5.4", forRemoval = true)
-  static void walkEnterAndExitsOnlyRecursive(@NotNull ParseTreeListener listener,
-                                             @NotNull ParserRuleContext parserRuleContext)
-  {
-    parserRuleContext.enterRule(listener);
-
-    final var children = parserRuleContext.children;
-
-    if (children != null)
-      for(var parseTreeChild: children)
-        if (parseTreeChild instanceof ParserRuleContext)
-          walkEnterAndExitsOnlyRecursive(listener, (ParserRuleContext)parseTreeChild);
-
-    parserRuleContext.exitRule(listener);
   }
 
 
@@ -121,13 +88,6 @@ final class ParseTreeWalker
       else if (childNode instanceof ParserRuleContext)
         nodeStack.addFirst(new ParserRuleContextNode((ParserRuleContext)childNode));
     }
-  }
-
-
-  @Contract(mutates = "param2")
-  @Deprecated(since = "0.5.4", forRemoval = true)
-  static void walkFullRecursive(@NotNull ParseTreeListener listener, @NotNull ParserRuleContext parserRuleContext) {
-    org.antlr.v4.runtime.tree.ParseTreeWalker.DEFAULT.walk(listener, parserRuleContext);
   }
 
 

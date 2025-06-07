@@ -31,21 +31,8 @@ import static de.sayayi.lib.antlr4.walker.ParseTreeWalker.*;
  * @author Jeroen Gremmen
  * @since 0.1.0
  */
-@SuppressWarnings("removal")
 public enum Walker
 {
-  /**
-   * Walk and invoke all rule-related methods using recursion.
-   */
-  @Deprecated(since = "0.5.4", forRemoval = true)
-  WALK_FULL_RECURSIVE {
-    @Override
-    public void walk(@NotNull ParseTreeListener listener, @NotNull ParserRuleContext parserRuleContext) {
-      walkFullRecursive(listener, parserRuleContext);
-    }
-  },
-
-
   /**
    * Walk and invoke all rule-related methods using the heap.
    */
@@ -53,26 +40,6 @@ public enum Walker
     @Override
     public void walk(@NotNull ParseTreeListener listener, @NotNull ParserRuleContext parserRuleContext) {
       walkFullIterative(listener, parserRuleContext);
-    }
-  },
-
-
-  /**
-   * Walk and invoke rule-specific exit methods only.
-   * <p>
-   * This walker never invokes the following methods:
-   * <ul>
-   *   <li>{@link ParseTreeListener#enterEveryRule(ParserRuleContext)}</li>
-   *   <li>{@link ParseTreeListener#exitEveryRule(ParserRuleContext)}</li>
-   *   <li>{@link ParseTreeListener#visitTerminal(TerminalNode)}</li>
-   *   <li>{@link ParseTreeListener#visitErrorNode(ErrorNode)}</li>
-   * </ul>
-   */
-  @Deprecated(since = "0.5.4", forRemoval = true)
-  WALK_EXIT_RULES_RECURSIVE {
-    @Override
-    public void walk(@NotNull ParseTreeListener listener, @NotNull ParserRuleContext parserRuleContext) {
-      walkExitsOnlyRecursive(listener, parserRuleContext);
     }
   },
 
@@ -94,26 +61,6 @@ public enum Walker
     @Override
     public void walk(@NotNull ParseTreeListener listener, @NotNull ParserRuleContext parserRuleContext) {
       walkExitsOnlyIterative(listener, parserRuleContext);
-    }
-  },
-
-
-  /**
-   * Walk and invoke rule-specific enter and exit methods only.
-   * <p>
-   * This walker never invokes the following methods:
-   * <ul>
-   *   <li>{@link ParseTreeListener#enterEveryRule(ParserRuleContext)}</li>
-   *   <li>{@link ParseTreeListener#exitEveryRule(ParserRuleContext)}</li>
-   *   <li>{@link ParseTreeListener#visitTerminal(TerminalNode)}</li>
-   *   <li>{@link ParseTreeListener#visitErrorNode(ErrorNode)}</li>
-   * </ul>
-   */
-  @Deprecated(since = "0.5.4", forRemoval = true)
-  WALK_ENTER_AND_EXIT_RULES_RECURSIVE {
-    @Override
-    public void walk(@NotNull ParseTreeListener listener, @NotNull ParserRuleContext parserRuleContext) {
-      walkEnterAndExitsOnlyRecursive(listener, parserRuleContext);
     }
   },
 
