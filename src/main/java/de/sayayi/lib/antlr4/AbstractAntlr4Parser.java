@@ -377,18 +377,20 @@ public abstract class AbstractAntlr4Parser
     if (token == null)
       return "<no token>";
 
-    final var tokenType = token.getType();
-
     var text = token.getText();
-    if (text != null)
-      return text;
+    if (text == null)
+    {
+      if (isEOFToken(token))
+      {
+        text = parser.getVocabulary().getDisplayName(EOF);
+        if (text == null)
+          text = getEOFTokenDisplayText();
+      }
+      else
+        text = "<" + token.getType() + '>';
+    }
 
-    if (isEOFToken(token))
-      return getEOFTokenDisplayText();
-    else if ((text = token.getText()) == null)
-      return "<" + tokenType + '>';
-
-    return getQuotedDisplayText(text);
+    return text.startsWith("<") && text.endsWith(">") ? text : getQuotedDisplayText(text);
   }
 
 
