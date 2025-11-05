@@ -12,9 +12,9 @@ project.buildDir = file('.build')
 layout.buildDirectory = '.build'
 
 
-description 'ANTLR4 Runtime Extensions'
-group 'de.sayayi.lib'
-version libs.versions.antlr4.runtime.ext.get()
+description = 'ANTLR4 Runtime Extensions'
+group = 'de.sayayi.lib'
+version = libs.versions.antlr4.runtime.ext.get()
 
 
 configurations {
@@ -82,7 +82,7 @@ def resolvedJetbrainsAnnotationsVersion = configurations
 
 
 javadoc {
-  title "ANTLR4 Runtime Extensions ${version}"
+  title = "ANTLR4 Runtime Extensions ${version}"
 
   (options as StandardJavadocDocletOptions).with {
     linksOffline "https://javadoc.io/doc/org.jetbrains/annotations/${resolvedJetbrainsAnnotationsVersion}/",
@@ -104,12 +104,12 @@ javadoc {
     //addStringOption('no-module-directories', '')
   }
 
-  failOnError false
+  failOnError = false
 }
 
 
 tasks.withType(Jar).configureEach {
-  reproducibleFileOrder true
+  reproducibleFileOrder = true
 
   manifest {
     attributes(
@@ -150,7 +150,7 @@ publishing {
 
       pom {
         name = 'ANTLR4 Runtime Extensions'
-        description = "ANTLR4 Runtime Extensions"
+        description = 'ANTLR4 Runtime Extensions'
         url = 'https://github.com/jgremmen/antlr4-runtime-ext'
         inceptionYear = '2022'
 
