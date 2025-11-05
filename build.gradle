@@ -14,18 +14,14 @@ layout.buildDirectory = '.build'
 
 description 'ANTLR4 Runtime Extensions'
 group 'de.sayayi.lib'
-version '0.6.0'
-
-
-def antlr4Version = '4.13.2'
-def junitVersion = '5.13.+'
-def lombokVersion = '1.18.+'
-def jetbrainsAnnotationsVersion = '[24.0,26.1)'
+version libs.versions.antlr4.runtime.ext.get()
 
 
 configurations {
-  // get rid of antlr4 configuration dependency, which will include antlr4.jar
-  api.setExtendsFrom([])
+  api {
+    // get rid of antlr4 configuration dependency, which will include antlr4.jar
+    extendsFrom = extendsFrom.findAll { it != configurations.antlr }
+  }
 }
 
 
@@ -48,21 +44,21 @@ repositories {
 
 dependencies {
   // java
-  implementation "org.antlr:antlr4-runtime:${antlr4Version}"
+  implementation libs.antlr4.runtime
 
-  compileOnlyApi "org.jetbrains:annotations:${jetbrainsAnnotationsVersion}"
+  compileOnlyApi libs.jetbrains.annotations
 
   // test
-  testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+  testAnnotationProcessor libs.lombok
 
-  testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
-  testCompileOnly "org.jetbrains:annotations:${jetbrainsAnnotationsVersion}"
+  testCompileOnly libs.lombok
+  testCompileOnly libs.jetbrains.annotations
 
-  testImplementation "org.junit.jupiter:junit-jupiter-api:${junitVersion}"
-  testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${junitVersion}"
+  testImplementation libs.junit.jupiter.api
+  testRuntimeOnly libs.junit.jupiter.engine
   testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
-  antlr "org.antlr:antlr4:${antlr4Version}"
+  antlr libs.antlr4
 }
 
 
