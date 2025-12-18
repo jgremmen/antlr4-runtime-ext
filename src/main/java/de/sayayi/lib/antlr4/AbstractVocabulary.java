@@ -139,16 +139,6 @@ public abstract class AbstractVocabulary implements Vocabulary
 
 
 
-  private static final class Name
-  {
-    final String literal;
-    final String symbol;
-
-
-    private Name(@NotNull String literal, @NotNull String symbol)
-    {
-      this.literal = literal;
-      this.symbol = symbol;
-    }
+  private record Name(@NotNull String literal, @NotNull String symbol) {
   }
 }

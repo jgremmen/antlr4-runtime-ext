@@ -108,10 +108,8 @@ public abstract class AbstractAntlr4Parser
       @NotNull C parse(@NotNull L lexer, @NotNull Function<L,P> parserInstantiator, @NotNull Function<P,C> ruleExecutor)
   {
     // configure lexer
-    if (lexer instanceof Lexer)
+    if (lexer instanceof Lexer antlr4Lexer)
     {
-      final var antlr4Lexer = (Lexer)lexer;
-
       if (!keepConsoleErrorListeners)
         antlr4Lexer.removeErrorListener(ConsoleErrorListener.INSTANCE);
 
@@ -499,17 +497,13 @@ public abstract class AbstractAntlr4Parser
     @Override
     public @NotNull SyntaxErrorBuilder with(@NotNull SyntaxTree syntaxTree)
     {
-      if (syntaxTree instanceof ParserRuleContext)
+      if (syntaxTree instanceof ParserRuleContext parserRuleContext)
       {
-        final var parserRuleContext = (ParserRuleContext)syntaxTree;
-
         startToken = parserRuleContext.getStart();
         stopToken = parserRuleContext.getStop();
       }
-      else if (syntaxTree instanceof TerminalNode)
+      else if (syntaxTree instanceof TerminalNode terminalNode)
       {
-        final var terminalNode = (TerminalNode)syntaxTree;
-
         startToken = terminalNode.getSymbol();
         stopToken = terminalNode.getSymbol();
       }

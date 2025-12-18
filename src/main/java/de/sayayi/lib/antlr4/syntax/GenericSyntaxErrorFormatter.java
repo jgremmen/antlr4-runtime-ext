@@ -84,7 +84,7 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
     final var lineNumberFormatLength = lineNumberFormatter.format(1, false).length();
     final var text = new StringBuilder();
 
-    for(int l = max(startLine0Based - showLinesBefore, 0); l <= formatStopLine0Based; l++)
+    for(var l = max(startLine0Based - showLinesBefore, 0); l <= formatStopLine0Based; l++)
     {
       final var line = lines[l];
       final var lineChars = getLineCharacters(line);
@@ -105,7 +105,7 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
         final var marker = getMarker();
         var printMarker = false;
 
-        for(int c = -lineNumberFormatLength;
+        for(var c = -lineNumberFormatLength;
             c < lineLength && !(stopLine0Based == l && c > stopLocation.charPositionInLine);
             c++)
         {
@@ -190,8 +190,8 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
       return (lineNumber, markedLine) -> "";
 
     // digits = floor(1 + log10(stopLine))
-    int digits = 1;
-    for(int upperLimit = 10; stopLine >= upperLimit; digits++)
+    var digits = 1;
+    for(var upperLimit = 10; stopLine >= upperLimit; digits++)
       upperLimit *= 10;
 
     return new DefaultLineNumberFormatter(digits, '0', null, ": ");
@@ -201,9 +201,9 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
   @Contract(pure = true)
   protected int adjustLocation(char[] line, int charPositionInLine)
   {
-    int p = 0;
+    var p = 0;
 
-    for(int n = 0; n < line.length && n < charPositionInLine; n++)
+    for(var n = 0; n < line.length && n < charPositionInLine; n++)
       if (line[n] == '\t')
         p = ((p / tabSize) + 1) * tabSize;
       else
@@ -244,7 +244,7 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
 
     if (stopToken.getType() != EOF)
     {
-      final String text = stopToken
+      final var text = stopToken
           .getInputStream()
           .getText(new Interval(stopToken.getStartIndex(), stopToken.getStopIndex()));
 
@@ -254,7 +254,7 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
 
         for(int n = 0, l = chars.length - 1; n < l; n++)
         {
-          final char c = chars[n];
+          final var c = chars[n];
           if (c != '\r')
           {
             if (c == '\n')
@@ -283,7 +283,7 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
   private @NotNull String trimRight(@NotNull String s)
   {
     final var chars = s.toCharArray();
-    int len = chars.length;
+    var len = chars.length;
 
     while(len > 0 && chars[len - 1] <= ' ')
       len--;
@@ -411,7 +411,7 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
     @Override
     public @NotNull String format(@Range(from = 1, to = MAX_VALUE) int lineNumber, boolean markedLine)
     {
-      for(int n = lineNumberWidth; n-- > 0; lineNumber /= 10)
+      for(var n = lineNumberWidth; n-- > 0; lineNumber /= 10)
       {
         chars[prefixLength + n] = n < lineNumberWidth - 1 && lineNumber == 0
             ? paddingChar
