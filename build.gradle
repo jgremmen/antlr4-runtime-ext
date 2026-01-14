@@ -27,7 +27,7 @@ configurations {
 
 java {
   toolchain {
-    languageVersion = JavaLanguageVersion.of(17)
+    languageVersion = JavaLanguageVersion.of(21)
   }
 }
 
@@ -36,7 +36,7 @@ test {
   useJUnitPlatform()
 
   javaLauncher = javaToolchains.launcherFor {
-    languageVersion = JavaLanguageVersion.of(17)
+    languageVersion = JavaLanguageVersion.of(21)
   }
 }
 
@@ -121,12 +121,14 @@ tasks.withType(Jar).configureEach {
         'Implementation-Vendor-Id': 'de.sayayi',
         'Implementation-Title': project.name,
         'Implementation-Version': project.version,
-        'Created-By': "${System.getProperty('java.version')} (${System.getProperty('java.specification.vendor')})",
+        'Created-By': System.getProperty('java.version'),
         'Built-Date': new Date().format('yyyy-MM-dd HH:mm:ss')
     )
   }
 
-  from files('LICENSE')
+  metaInf {
+    from files('LICENSE')
+  }
 }
 
 

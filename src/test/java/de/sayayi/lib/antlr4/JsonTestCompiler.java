@@ -110,7 +110,7 @@ final class JsonTestCompiler extends AbstractAntlr4Parser
       {
         syntaxError("object size must be <= 3")
             .withStart(pairs.get(3))
-            .withStop(pairs.get(pairs.size() - 1))
+            .withStop(pairs.getLast())
             .report();
       }
     }
