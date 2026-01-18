@@ -219,7 +219,7 @@ public abstract class AbstractAntlr4Parser
    *
    * @since 0.6.0
    */
-  @Contract(pure = true)
+  @Contract(value = "null -> false", pure = true)
   protected boolean isEOFToken(Token token) {
     return token != null && token.getType() == EOF;
   }
@@ -353,7 +353,7 @@ public abstract class AbstractAntlr4Parser
                                                              @NotNull Token offendingToken)
   {
     final var input = isEOFToken(startToken)
-        ? "<EOF>"
+        ? getEOFTokenDisplayText()
         : getQuotedDisplayText(parser.getInputStream().getText(startToken, offendingToken));
 
     return "no viable alternative at input " + input;
