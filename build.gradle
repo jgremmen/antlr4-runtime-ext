@@ -2,8 +2,7 @@ plugins {
   id 'java-library'
   id 'idea'
   id 'antlr'
-  id 'maven-publish'
-  id 'signing'
+  id 'com.adarshr.test-logger' version '4.0.0'
 }
 
 
@@ -38,6 +37,12 @@ test {
   javaLauncher = javaToolchains.launcherFor {
     languageVersion = JavaLanguageVersion.of(21)
   }
+}
+
+
+testlogger {
+  theme = 'mocha'
+  slowThreshold = 3500
 }
 
 
