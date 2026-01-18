@@ -226,6 +226,25 @@ public abstract class AbstractAntlr4Parser
 
 
   /**
+   * Get the terminal token at the given child index of the parser rule context.
+   *
+   * @param parserRuleContext  parser rule context, not {@code null}
+   * @param childIndex         child index
+   *
+   * @return  terminal token at the given child index or {@code null} if the child at the given index is
+   *          not a terminal node
+   *
+   * @since 0.7.0
+   */
+  @Contract(pure = true)
+  protected Token getTerminalToken(@NotNull ParserRuleContext parserRuleContext, int childIndex)
+  {
+    final var child = parserRuleContext.getChild(childIndex);
+    return child instanceof TerminalNode ? ((TerminalNode)child).getSymbol() : null;
+  }
+
+
+  /**
    * Prepare the syntax error builder for the given error message.
    * <p>
    * @param errorMessage  error message describing the problem, not {@code null}
