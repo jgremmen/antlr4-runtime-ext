@@ -103,7 +103,7 @@ public abstract class AbstractVocabulary implements Vocabulary
   public String getLiteralName(int tokenType)
   {
     var name = vocabulary.get(tokenType);
-    return name == null ? null : name.literal;
+    return name == null ? null : name.literal();
   }
 
 
@@ -111,7 +111,7 @@ public abstract class AbstractVocabulary implements Vocabulary
   public String getSymbolicName(int tokenType)
   {
     var name = vocabulary.get(tokenType);
-    return name == null ? null : name.symbol;
+    return name == null ? null : name.symbol();
   }
 
 
@@ -119,7 +119,7 @@ public abstract class AbstractVocabulary implements Vocabulary
   public String getDisplayName(int tokenType)
   {
     var name = vocabulary.get(tokenType);
-    return name == null ? Integer.toString(tokenType) : name.literal;
+    return name == null ? Integer.toString(tokenType) : name.literal();
   }
 
 
@@ -131,7 +131,7 @@ public abstract class AbstractVocabulary implements Vocabulary
         .stream()
         .map(entry -> {
           var name = entry.getValue();
-          return "{token=" + entry.getKey() + ",literal=" + name.literal + ",symbol=" + name.symbol + '}';
+          return "{token=" + entry.getKey() + ",literal=" + name.literal() + ",symbol=" + name.symbol() + '}';
         })
         .collect(joining(",", "Vocabulary[", "]"));
   }
