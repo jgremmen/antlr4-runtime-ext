@@ -1,1 +1,13 @@
 rootProject.name = 'antlr4-runtime-ext'
+
+
+buildscript {
+  repositories {
+    gradlePluginPortal()
+    mavenCentral()
+  }
+
+  dependencies {
+    classpath 'org.danilopianini.publish-on-central:org.danilopianini.publish-on-central.gradle.plugin:9.1.10'
+  }
+}

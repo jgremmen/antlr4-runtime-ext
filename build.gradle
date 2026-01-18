@@ -151,70 +151,7 @@ tasks.register('sourcesJar', Jar) {
 }
 
 
-publishing {
-  publications {
-    create('maven', MavenPublication) {
-      from components.java
-
-      artifact javadocJar
-      artifact sourcesJar
-
-      pom {
-        name = 'ANTLR4 Runtime Extensions'
-        description = 'ANTLR4 Runtime Extensions'
-        url = 'https://github.com/jgremmen/antlr4-runtime-ext'
-        inceptionYear = '2022'
-
-        licenses {
-          license {
-            name = 'Apache License, Version 2.0'
-            url = 'https://www.apache.org/licenses/LICENSE-2.0'
-            distribution = 'repo'
-          }
-        }
-
-        developers {
-          developer {
-            id = 'jgremmen'
-            name = 'Jeroen Gremmen'
-            email = 'jeroen.gremmen@sayayi.de'
-          }
-        }
-
-        scm {
-          connection = 'scm:git:git://github.com/jgremmen/antlr4-runtime-ext.git'
-          developerConnection = 'scm:git:git://github.com/jgremmen/antlr4-runtime-ext.git'
-          url = 'https://github.com/jgremmen/antlr4-runtime-ext'
-        }
-      }
-    }
-  }
-
-  def snapshot = version.toString().endsWith('-SNAPSHOT')
-  def mavenTempUrl = layout.buildDirectory.dir(snapshot ? 'repository/snapshot' : 'repository/release')
-
-  repositories {
-    maven {
-      name = 'mavenTemp'
-      url = mavenTempUrl
-    }
-    maven {
-      // maven central
-      url = snapshot
-          ? 'https://oss.sonatype.org/content/repositories/snapshots'
-          : 'https://oss.sonatype.org/service/local/staging/deploy/maven2'
-      credentials {
-        username = findProperty('mavenCentral.username')
-        password = findProperty('mavenCentral.password')
-      }
-    }
-  }
-}
-
-
-signing {
-  sign publishing.publications.maven
-}
+apply from: 'gradle/publish.gradle'
 
 
 wrapper {
