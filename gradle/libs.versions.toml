@@ -3,7 +3,7 @@
 antlr4-runtime-ext = '0.7.0-SNAPSHOT'
 
 antlr4 = '4.13.2'
-jetbrains-annotations = '[24.0,26.1)'
+jetbrains-annotations = '[24.0,26.2)'
 junit = '6.0.+'
 lombok = '1.18.+'
 
