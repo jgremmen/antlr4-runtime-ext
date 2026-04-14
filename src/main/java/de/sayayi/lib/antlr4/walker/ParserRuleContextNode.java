@@ -22,8 +22,18 @@ import org.jetbrains.annotations.NotNull;
 
 
 /**
+ * Internal node wrapper used during iterative parse tree traversal.
+ * <p>
+ * This class encapsulates a parser rule context along with iteration state, allowing tree walkers to track which
+ * children have been visited during heap-based traversal. Each instance represents a single node in the parse tree
+ * being walked.
+ * <p>
+ * This class is package-private and used internally by {@link ParseTreeWalker}.
+ *
  * @author Jeroen Gremmen
  * @since 0.2.0
+ *
+ * @see ParseTreeWalker
  */
 final class ParserRuleContextNode
 {
@@ -32,6 +42,13 @@ final class ParserRuleContextNode
   private int index;
 
 
+  /**
+   * Creates a new node wrapper for the given parser rule context.
+   * <p>
+   * Initializes the iteration state to begin traversing the context's children.
+   *
+   * @param parserRuleContext  the parser rule context to wrap, not {@code null}
+   */
   ParserRuleContextNode(@NotNull ParserRuleContext parserRuleContext)
   {
     this.parserRuleContext = parserRuleContext;
@@ -43,12 +60,27 @@ final class ParserRuleContextNode
   }
 
 
+  /**
+   * Returns the next child node to visit in the traversal sequence.
+   * <p>
+   * Each call advances the internal position, moving to the next child. Once all children have been returned,
+   * subsequent calls return {@code null}.
+   *
+   * @return  the next child parse tree node, or {@code null} if all children have been visited
+   */
   @Contract(mutates = "this")
   ParseTree getNextChild() {
     return index < childCount ? parserRuleContext.children.get(index++) : null;
   }
 
 
+  /**
+   * Checks if the iteration is at the first child position.
+   * <p>
+   * This is useful for determining when to invoke enter callbacks during tree traversal.
+   *
+   * @return  {@code true} if no children have been visited yet, {@code false} otherwise
+   */
   @Contract(pure = true)
   boolean isFirst() {
     return index == 0;

@@ -21,8 +21,8 @@ import org.jetbrains.annotations.NotNull;
 
 
 /**
- * Interface for formatting syntax error messages based on detailed lexer/parser token, location
- * and context information.
+ * Interface for formatting syntax error messages based on detailed lexer/parser token, location and context
+ * information.
  *
  * @see GenericSyntaxErrorFormatter
  *
@@ -33,14 +33,21 @@ import org.jetbrains.annotations.NotNull;
 public interface SyntaxErrorFormatter
 {
   /**
-   * Format the syntax error.
+   * Formats a syntax error into a human-readable error message.
+   * <p>
+   * This method is called when a syntax error is detected during parsing. It receives the tokens
+   * that mark the error's location and optionally an exception that provides additional context.
+   * The implementation should produce a clear, informative message that helps users understand
+   * what went wrong and where.
+   * <p>
+   * The start and stop tokens define the range of the error in the source. If the error is at a
+   * single position, both tokens typically refer to the same location.
    *
-   * @param startToken  start token representing the beginning of the syntax error, not {@code null}
-   * @param stopToken   stop token representing the end of the syntax error, not {@code null}
-   * @param cause       optional {@code Exception} instance providing additional information
-   *                    on where the syntax error occurred
+   * @param startToken  the token marking the beginning of the syntax error, not {@code null}
+   * @param stopToken   the token marking the end of the syntax error, not {@code null}
+   * @param cause       optional exception providing additional context about the error, may be {@code null}
    *
-   * @return  formatted syntax error message, never {@code null}
+   * @return  a formatted, human-readable error message, never {@code null}
    */
   @Contract(pure = true)
   @NotNull String format(@NotNull Token startToken, @NotNull Token stopToken, Exception cause);

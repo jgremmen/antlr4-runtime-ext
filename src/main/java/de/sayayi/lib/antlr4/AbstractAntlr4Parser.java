@@ -37,8 +37,26 @@ import static org.antlr.v4.runtime.Token.EOF;
 
 
 /**
+ * Abstract base class for building ANTLR4-based parsers with integrated syntax error handling.
+ * <p>
+ * This class provides a framework for lexing, parsing, and walking parse trees while handling syntax errors in a
+ * consistent and user-friendly way. It manages the lifecycle of lexer and parser instances, installs custom error
+ * listeners, and translates syntax errors into formatted exception messages that show the exact error location in
+ * the source input.
+ * <p>
+ * Subclasses typically implement a public parse method that calls the protected
+ * {@link #parse(TokenSource, Function, Function) parse} and {@link #walk(ParseTreeListener, ParserRuleContext) walk}
+ * methods with the appropriate generated lexer, parser, and listener types.
+ * <p>
+ * The class also provides various hooks for customizing error messages, such as
+ * {@link #createTokenRecognitionMessage}, {@link #createInputMismatchMessage}, and
+ * {@link #createException}, allowing subclasses to tailor the error reporting to their specific needs.
+ *
  * @author Jeroen Gremmen
  * @since 0.1.0
+ *
+ * @see SyntaxErrorFormatter
+ * @see Walker
  */
 @SuppressWarnings({"SameParameterValue", "unused"})
 public abstract class AbstractAntlr4Parser
@@ -47,17 +65,34 @@ public abstract class AbstractAntlr4Parser
   private final boolean keepConsoleErrorListeners;
 
 
+  /**
+   * Creates a parser with a default {@link GenericSyntaxErrorFormatter} using a tab size of 8, no context lines,
+   * and a single space prefix.
+   */
   protected AbstractAntlr4Parser() {
     this(new GenericSyntaxErrorFormatter(8, 0, 0, " "));
   }
 
 
+  /**
+   * Creates a parser with the specified syntax error formatter.
+   * <p>
+   * Console error listeners added by ANTLR4 to lexer and parser instances are removed by default.
+   *
+   * @param syntaxErrorFormatter  the formatter used to produce visual error messages, not {@code null}
+   */
   protected AbstractAntlr4Parser(@NotNull SyntaxErrorFormatter syntaxErrorFormatter) {
     this(syntaxErrorFormatter, false);
   }
 
 
   /**
+   * Creates a parser with the specified syntax error formatter and console error listener configuration.
+   *
+   * @param syntaxErrorFormatter       the formatter used to produce visual error messages, not {@code null}
+   * @param keepConsoleErrorListeners  {@code true} to keep ANTLR4's default console error listeners,
+   *                                   {@code false} to remove them
+   *
    * @since 0.5.3
    */
   protected AbstractAntlr4Parser(@NotNull SyntaxErrorFormatter syntaxErrorFormatter,
@@ -68,6 +103,27 @@ public abstract class AbstractAntlr4Parser
   }
 
 
+  /**
+   * Convenience method that parses the input, walks the resulting parse tree with the given listener, and extracts
+   * a result from the parser rule context.
+   * <p>
+   * This method combines {@link #parse(TokenSource, Function, Function)} and
+   * {@link #walk(ParseTreeListener, ParserRuleContext)} into a single call, and then applies the
+   * {@code contextResultExtractor} to obtain the final result.
+   *
+   * @param lexer                   the lexer (token source) to use, not {@code null}
+   * @param parserInstantiator      creates a parser from the lexer, not {@code null}
+   * @param ruleExecutor            invokes the grammar rule on the parser, not {@code null}
+   * @param listener                the listener to walk the parse tree with, not {@code null}
+   * @param contextResultExtractor  extracts the result from the walked parse tree context, not {@code null}
+   *
+   * @return  the result extracted from the parse tree context
+   *
+   * @param <L>  token source type, usually the generated Lexer type
+   * @param <P>  parser type, usually the generated Parser type
+   * @param <C>  parser rule context type returned by the executed rule
+   * @param <R>  result type extracted from the context
+   */
   @Contract(mutates = "param1")
   @SuppressWarnings("UnusedReturnValue")
   protected <L extends TokenSource,P extends Parser,C extends ParserRuleContext,R>
@@ -198,8 +254,8 @@ public abstract class AbstractAntlr4Parser
    * @see Walker
    */
   @Contract(value = "_, _ -> param2", mutates = "param2")
-  protected <C extends ParserRuleContext>
-      @NotNull C walk(@NotNull ParseTreeListener listener, @NotNull C parserRuleContext)
+  protected <C extends ParserRuleContext> @NotNull C walk(@NotNull ParseTreeListener listener,
+                                                          @NotNull C parserRuleContext)
   {
     (listener instanceof WalkerSupplier
         ? ((WalkerSupplier)listener).getWalker()
@@ -246,7 +302,7 @@ public abstract class AbstractAntlr4Parser
 
   /**
    * Prepare the syntax error builder for the given error message.
-   * <p>
+   *
    * @param errorMessage  error message describing the problem, not {@code null}
    *
    * @return  new syntax error builder instance, never {@code null}
@@ -300,6 +356,14 @@ public abstract class AbstractAntlr4Parser
 
 
   /**
+   * Creates a message for the case where the parser encountered a token that does not match the expected input.
+   *
+   * @param parser                     parser instance, not {@code null}
+   * @param expectedTokens             the set of tokens that would have been valid at this point, not {@code null}
+   * @param mismatchLocationNearToken  the token that did not match the expected input, may be {@code null}
+   *
+   * @return  message describing the mismatch, never {@code null}
+   *
    * @since 0.6.0
    */
   @Contract(pure = true)
@@ -313,6 +377,14 @@ public abstract class AbstractAntlr4Parser
 
 
   /**
+   * Creates a message for the case where the parser detected a missing token in the input.
+   *
+   * @param parser                    parser instance, not {@code null}
+   * @param expectedTokens            the set of tokens that were expected at this point, not {@code null}
+   * @param missingLocationNearToken  the token near where the missing token was expected, may be {@code null}
+   *
+   * @return  message describing the missing token, never {@code null}
+   *
    * @since 0.6.0
    */
   @Contract(pure = true)
@@ -325,6 +397,14 @@ public abstract class AbstractAntlr4Parser
 
 
   /**
+   * Creates a message for the case where the parser encountered an extraneous (unwanted) token in the input.
+   *
+   * @param parser          parser instance, not {@code null}
+   * @param unwantedToken   the token that was not expected at this point, not {@code null}
+   * @param expectedTokens  the set of tokens that would have been valid instead, not {@code null}
+   *
+   * @return  message describing the unwanted token, never {@code null}
+   *
    * @since 0.6.0
    */
   @Contract(pure = true)
@@ -443,8 +523,22 @@ public abstract class AbstractAntlr4Parser
 
 
 
+  /**
+   * Interface for parse tree listeners that want to specify which {@link Walker} strategy to use during traversal.
+   * <p>
+   * When a listener implements this interface, the {@link #walk(ParseTreeListener, ParserRuleContext)} method uses
+   * the walker returned by {@link #getWalker()} instead of the default {@link Walker#WALK_FULL_HEAP}.
+   * This allows listeners to choose a more efficient walker when they don't need all callbacks.
+   */
   public interface WalkerSupplier extends ParseTreeListener
   {
+    /**
+     * Returns the walker strategy to use when traversing the parse tree with this listener.
+     * <p>
+     * The default implementation returns {@link Walker#WALK_FULL_HEAP}.
+     *
+     * @return  the walker to use, never {@code null}
+     */
     @Contract(pure = true)
     default @NotNull Walker getWalker() {
       return WALK_FULL_HEAP;
@@ -477,16 +571,8 @@ public abstract class AbstractAntlr4Parser
 
 
     @Override
-    public @NotNull SyntaxErrorBuilder withStart(@NotNull SyntaxTree syntaxTree)
-    {
-      if (syntaxTree instanceof ParserRuleContext)
-        startToken = ((ParserRuleContext)syntaxTree).getStart();
-      else if (syntaxTree instanceof TerminalNode)
-        startToken = ((TerminalNode)syntaxTree).getSymbol();
-      else
-        throw new IllegalArgumentException("unsupported syntax tree type: " + syntaxTree.getClass().getName());
-
-      return this;
+    public @NotNull SyntaxErrorBuilder withStart(@NotNull SyntaxTree syntaxTree) {
+      return withStart(tokenInternal(syntaxTree, ParserRuleContext::getStart));
     }
 
 
@@ -500,16 +586,21 @@ public abstract class AbstractAntlr4Parser
 
 
     @Override
-    public @NotNull SyntaxErrorBuilder withStop(@NotNull SyntaxTree syntaxTree)
+    public @NotNull SyntaxErrorBuilder withStop(@NotNull SyntaxTree syntaxTree) {
+      return withStop(tokenInternal(syntaxTree, ParserRuleContext::getStop));
+    }
+
+
+    @Contract(pure = true)
+    private @NotNull Token tokenInternal(@NotNull SyntaxTree syntaxTree,
+                                         @NotNull Function<ParserRuleContext,Token> tokenFunction)
     {
       if (syntaxTree instanceof ParserRuleContext)
-        stopToken = ((ParserRuleContext)syntaxTree).getStop();
+        return tokenFunction.apply((ParserRuleContext)syntaxTree);
       else if (syntaxTree instanceof TerminalNode)
-        stopToken = ((TerminalNode)syntaxTree).getSymbol();
+        return ((TerminalNode)syntaxTree).getSymbol();
       else
         throw new IllegalArgumentException("unsupported syntax tree type: " + syntaxTree.getClass().getName());
-
-      return this;
     }
 
 
@@ -522,10 +613,7 @@ public abstract class AbstractAntlr4Parser
         stopToken = parserRuleContext.getStop();
       }
       else if (syntaxTree instanceof TerminalNode terminalNode)
-      {
-        startToken = terminalNode.getSymbol();
-        stopToken = terminalNode.getSymbol();
-      }
+        startToken = stopToken = terminalNode.getSymbol();
       else
         throw new IllegalArgumentException("unsupported syntax tree type: " + syntaxTree.getClass().getName());
 

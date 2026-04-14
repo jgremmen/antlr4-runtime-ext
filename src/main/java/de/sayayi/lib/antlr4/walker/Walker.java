@@ -27,6 +27,20 @@ import static de.sayayi.lib.antlr4.walker.ParseTreeWalker.*;
 
 /**
  * Variants of depth-first-search walkers for a parser rule context.
+ * <p>
+ * This enum provides different walking strategies for traversing ANTLR4 parse trees. Each walker variant determines
+ * which listener methods are invoked during tree traversal and uses heap-based iteration to avoid stack overflow
+ * issues with deeply nested parse trees.
+ * <p>
+ * Choose the appropriate walker based on which listener callbacks you need during traversal:
+ * <ul>
+ *   <li>Use {@link #WALK_FULL_HEAP} for complete tree traversal with all callbacks</li>
+ *   <li>Use {@link #WALK_EXIT_RULES_HEAP} when you only need rule exit callbacks</li>
+ *   <li>
+ *     Use {@link #WALK_ENTER_AND_EXIT_RULES_HEAP} when you need both enter and exit callbacks but not
+ *     terminal/error nodes
+ *   </li>
+ * </ul>
  *
  * @author Jeroen Gremmen
  * @since 0.1.0
@@ -34,7 +48,11 @@ import static de.sayayi.lib.antlr4.walker.ParseTreeWalker.*;
 public enum Walker
 {
   /**
-   * Walk and invoke all rule-related methods using the heap.
+   * Full tree walker that invokes all listener methods during traversal.
+   * <p>
+   * This walker visits every node in the parse tree and invokes all corresponding listener methods: enter/exit
+   * methods for rules, terminal node visits, and error node visits. It uses a heap-based iterative approach to
+   * prevent stack overflow with deeply nested trees.
    */
   WALK_FULL_HEAP {
     @Override
@@ -86,6 +104,15 @@ public enum Walker
   };
 
 
+  /**
+   * Walks the parse tree starting from the given parser rule context.
+   * <p>
+   * The walk strategy is determined by the specific walker variant. During traversal, appropriate listener methods
+   * are invoked on the provided listener based on the nodes encountered and the walker's behavior.
+   *
+   * @param listener           the parse tree listener that receives callbacks during tree traversal, not {@code null}
+   * @param parserRuleContext  the root context from which to start walking the parse tree, not {@code null}
+   */
   @Contract(mutates = "param2")
   public abstract void walk(@NotNull ParseTreeListener listener, @NotNull ParserRuleContext parserRuleContext);
 }

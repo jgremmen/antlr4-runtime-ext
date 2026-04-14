@@ -57,6 +57,13 @@ public abstract class AbstractVocabulary implements Vocabulary
   private boolean sealed;
 
 
+  /**
+   * Constructs a new vocabulary.
+   * <p>
+   * The constructor registers the default {@code <EOF>} literal for the {@link Token#EOF EOF} token and then
+   * invokes {@link #addTokens()} to allow subclasses to populate the vocabulary. After construction, the vocabulary
+   * is sealed and cannot be modified.
+   */
   protected AbstractVocabulary()
   {
     sealed = false;
@@ -93,12 +100,14 @@ public abstract class AbstractVocabulary implements Vocabulary
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public int getMaxTokenType() {
     return vocabulary.lastKey();
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public String getLiteralName(int tokenType)
   {
@@ -107,6 +116,7 @@ public abstract class AbstractVocabulary implements Vocabulary
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public String getSymbolicName(int tokenType)
   {
@@ -115,6 +125,11 @@ public abstract class AbstractVocabulary implements Vocabulary
   }
 
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * If the token type is not found in the vocabulary, the numeric token type is returned as a string.
+   */
   @Override
   public String getDisplayName(int tokenType)
   {
@@ -123,6 +138,11 @@ public abstract class AbstractVocabulary implements Vocabulary
   }
 
 
+  /**
+   * Returns a string representation of this vocabulary listing all registered tokens.
+   *
+   * @return  a string containing all token entries with their literal and symbolic names
+   */
   @Override
   public String toString()
   {
@@ -139,6 +159,12 @@ public abstract class AbstractVocabulary implements Vocabulary
 
 
 
+  /**
+   * Holds the literal and symbolic name for a vocabulary token.
+   *
+   * @param literal  the literal representation of the token, not {@code null}
+   * @param symbol   the symbolic representation of the token, not {@code null}
+   */
   private record Name(@NotNull String literal, @NotNull String symbol) {
   }
 }

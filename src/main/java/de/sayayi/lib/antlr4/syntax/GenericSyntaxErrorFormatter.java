@@ -24,8 +24,7 @@ import org.jetbrains.annotations.Range;
 
 import static java.lang.Character.isSpaceChar;
 import static java.lang.Integer.MAX_VALUE;
-import static java.lang.Math.max;
-import static java.lang.Math.min;
+import static java.lang.Math.*;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
 import static java.util.Objects.requireNonNull;
@@ -33,8 +32,30 @@ import static org.antlr.v4.runtime.Token.EOF;
 
 
 /**
+ * A configurable syntax error formatter that produces human-readable error messages with visual context.
+ * <p>
+ * This formatter generates error messages that include surrounding source code lines with line numbers and visual
+ * markers (typically carets) pointing to the exact location of the syntax error. The output helps users quickly
+ * identify and understand what went wrong in their input.
+ * <p>
+ * The formatter is highly configurable, allowing control over:
+ * <ul>
+ *   <li>Tab size for proper alignment when displaying source code</li>
+ *   <li>Number of context lines to show before and after the error</li>
+ *   <li>Indentation or prefix for the formatted output</li>
+ *   <li>Line number formatting and marker characters</li>
+ * </ul>
+ * <p>
+ * Example output:
+ * <pre>
+ * 5: { "test" : 12, bool: true }
+ *                   ^^^^
+ * </pre>
+ *
  * @author Jeroen Gremmen
  * @since 0.3.0
+ *
+ * @see SyntaxErrorFormatter
  */
 public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
 {
@@ -44,23 +65,56 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
   private final String prefix;
 
 
+  /**
+   * Creates a formatter with the specified configuration using an indentation level.
+   * <p>
+   * The indent parameter specifies how many spaces to prepend before each line of the formatted output.
+   *
+   * @param tabSize          the number of spaces to use when expanding tab characters, must be at least 1
+   * @param showLinesBefore  the number of context lines to show before the error line
+   * @param showLinesAfter   the number of context lines to show after the error line
+   * @param indent           the number of spaces to indent the formatted output, must be non-negative
+   *
+   * @throws IllegalArgumentException  if {@code tabSize} is less than 1 or {@code indent} is negative
+   */
   public GenericSyntaxErrorFormatter(int tabSize, int showLinesBefore, int showLinesAfter, int indent) {
     this(tabSize, showLinesBefore, showLinesAfter, prefixFromIndent(indent));
   }
 
 
+  /**
+   * Creates a formatter with the specified configuration using a custom prefix string.
+   * <p>
+   * The prefix is prepended to each line of the formatted output, allowing for custom indentation or decorative
+   * elements.
+   *
+   * @param tabSize          the number of spaces to use when expanding tab characters, must be at least 1
+   * @param showLinesBefore  the number of context lines to show before the error line
+   * @param showLinesAfter   the number of context lines to show after the error line
+   * @param prefix           the string to prepend to each output line, not {@code null}
+   *
+   * @throws IllegalArgumentException  if {@code tabSize} is less than 1
+   * @throws NullPointerException      if {@code prefix} is {@code null}
+   */
   public GenericSyntaxErrorFormatter(int tabSize, int showLinesBefore, int showLinesAfter, @NotNull String prefix)
   {
     if (tabSize < 1)
       throw new IllegalArgumentException("tabSize must be at least 1");
 
     this.tabSize = tabSize;
-    this.showLinesBefore = min(max(showLinesBefore, 0), 0x3fff_ffff);
-    this.showLinesAfter = min(max(showLinesAfter, 0), 0x3fff_ffff);
+    this.showLinesBefore = clamp(showLinesBefore, 0, 0x3fff_ffff);
+    this.showLinesAfter = clamp(showLinesAfter, 0, 0x3fff_ffff);
     this.prefix = requireNonNull(prefix, "prefix must not be null");
   }
 
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * This implementation generates a multi-line message showing the relevant source code lines with line numbers and
+   * visual markers indicating where the error occurred. The error can span a single token or multiple tokens across
+   * lines.
+   */
   @Override
   public @NotNull String format(@NotNull Token startToken, @NotNull Token stopToken, Exception cause)
   {
@@ -160,6 +214,17 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
   }
 
 
+  /**
+   * Provides a fallback error message when token location information is not available.
+   * <p>
+   * This method is called when the tokens don't have valid location information. The default implementation returns
+   * the exception's string representation for lexer exceptions, or an empty string otherwise. Subclasses can override
+   * this to provide custom fallback formatting.
+   *
+   * @param ex  the exception that occurred, may be {@code null}
+   *
+   * @return  a fallback error message, never {@code null}
+   */
   @Contract(pure = true)
   protected @NotNull String formatForMissingTokenLocation(Exception ex)
   {
@@ -198,6 +263,17 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
   }
 
 
+  /**
+   * Adjusts a character position to account for tab expansion.
+   * <p>
+   * This method calculates the actual display column of a character when tabs are expanded to spaces based on the
+   * configured tab size. This ensures that error markers align correctly with the displayed source code.
+   *
+   * @param line                the line characters (after tab expansion), not {@code null}
+   * @param charPositionInLine  the original character position in the source line
+   *
+   * @return  the adjusted display column position
+   */
   @Contract(pure = true)
   protected int adjustLocation(char[] line, int charPositionInLine)
   {
@@ -231,12 +307,31 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
   }
 
 
+  /**
+   * Extracts the starting location from a token.
+   * <p>
+   * Subclasses can override this to customize how start locations are determined.
+   *
+   * @param startToken  the token marking the error start, not {@code null}
+   *
+   * @return  the start location, never {@code null}
+   */
   @Contract(pure = true)
   protected @NotNull Location getStartLocation(@NotNull Token startToken) {
     return new Location(startToken);
   }
 
 
+  /**
+   * Extracts the stopping location from a token.
+   * <p>
+   * For multi-character and multi-line tokens, this method adjusts the position to point to the last character of
+   * the token. Subclasses can override this to customize how stop locations are determined.
+   *
+   * @param stopToken  the token marking the error end, not {@code null}
+   *
+   * @return  the stop location, never {@code null}
+   */
   @Contract(pure = true)
   protected @NotNull Location getStopLocation(@NotNull Token stopToken)
   {
@@ -273,6 +368,13 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
   }
 
 
+  /**
+   * Returns the character used for marking error locations in the formatted output.
+   * <p>
+   * The default implementation returns {@code ^}. Subclasses can override this to use a different marker character.
+   *
+   * @return  the marker character
+   */
   @Contract(pure = true)
   protected char getMarker() {
     return '^';
@@ -310,12 +412,23 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
 
 
 
+  /**
+   * Represents a position in the source code defined by a line number and character offset.
+   * <p>
+   * Instances are used internally by the formatter to track where errors start and end, and to correctly position
+   * visual markers in the formatted output.
+   */
   protected static final class Location implements Comparable<Location>
   {
     private int line;
     private int charPositionInLine;
 
 
+    /**
+     * Creates a location from a token's line and character position.
+     *
+     * @param token  the token to extract position information from, not {@code null}
+     */
     protected Location(@NotNull Token token)
     {
       line = token.getLine();
@@ -323,11 +436,24 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
     }
 
 
+    /**
+     * Checks whether this location has valid line and position values.
+     *
+     * @return  {@code true} if the line number is at least 1 and the character position is non-negative
+     */
     boolean isValid() {
       return line >= 1 && charPositionInLine >= 0;
     }
 
 
+    /**
+     * Compares this location to another, ordering by line number first and then by character position.
+     *
+     * @param location  the location to compare to, not {@code null}
+     *
+     * @return  a negative value if this location precedes {@code location}, a positive value if it follows,
+     *          or zero if both locations are equal
+     */
     @Override
     public int compareTo(@NotNull Location location)
     {
@@ -336,6 +462,11 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
     }
 
 
+    /**
+     * Returns a string representation of this location for debugging purposes.
+     *
+     * @return  a string describing the line and position, or an indication that the location is invalid
+     */
     @Override
     public String toString()
     {
@@ -350,8 +481,15 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
 
 
   /**
+   * Strategy interface for formatting line numbers in error output.
+   * <p>
+   * Implementations control how line numbers are displayed in the formatted error messages. The {@code format}
+   * method must always return a string of fixed length to ensure proper alignment of all output lines.
+   *
    * @author Jeroen Gremmen
    * @since 0.5.2
+   *
+   * @see GenericSyntaxErrorFormatter#getLineNumberFormatter(int, int)
    */
   @FunctionalInterface
   public interface LineNumberFormatter
@@ -377,7 +515,11 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
 
 
   /**
-   * Default line number formatter.
+   * Default implementation of line number formatting with configurable padding and decorations.
+   * <p>
+   * This formatter produces line numbers with zero-padding (or other padding characters), optional prefix and suffix
+   * strings. For example, it can format line numbers as "001: ", " 42: ", etc., with consistent width for proper
+   * alignment.
    *
    * @author Jeroen Gremmen
    * @since 0.5.2
@@ -390,6 +532,17 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
     protected final char paddingChar;
 
 
+    /**
+     * Creates a line number formatter with the specified configuration.
+     * <p>
+     * The formatter pads line numbers to a fixed width using the padding character, and optionally adds prefix and
+     * suffix strings.
+     *
+     * @param lineNumberWidth  the width (number of digits) for the line number field, 0 to 10
+     * @param paddingChar      the character to use for padding (typically '0' or ' ')
+     * @param prefix           optional string to prepend before the line number, may be {@code null}
+     * @param suffix           optional string to append after the line number, may be {@code null}
+     */
     public DefaultLineNumberFormatter(@Range(from = 0, to = 10) int lineNumberWidth, char paddingChar,
                                       String prefix, String suffix)
     {
@@ -408,6 +561,18 @@ public class GenericSyntaxErrorFormatter implements SyntaxErrorFormatter
     }
 
 
+    /**
+     * Formats a line number with padding, prefix, and suffix.
+     * <p>
+     * The line number is padded to the configured width and combined with the prefix and suffix to produce a
+     * fixed-length string. The {@code markedLine} parameter is not used by this default implementation but is
+     * available for subclasses to override.
+     *
+     * @param lineNumber  the line number to format, must be positive
+     * @param markedLine  {@code true} if this line contains an error marker (not used in default implementation)
+     *
+     * @return  the formatted line number with fixed length, never {@code null}
+     */
     @Override
     public @NotNull String format(@Range(from = 1, to = MAX_VALUE) int lineNumber, boolean markedLine)
     {

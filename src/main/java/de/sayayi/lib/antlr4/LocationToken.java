@@ -23,10 +23,16 @@ import org.jetbrains.annotations.NotNull;
 
 
 /**
- * Minimal token implementation to be used for syntax error formatting, providing location information only.
+ * Minimal {@link Token} implementation that provides location information only.
+ * <p>
+ * This class is primarily intended for use with syntax error formatting, where a lightweight token is needed to
+ * convey the position of an error in the source input. It does not carry parser-related metadata such as token type,
+ * channel, or token index, which are returned as constant default values.
  *
  * @author Jeroen Gremmen
  * @since 0.5.3
+ *
+ * @see de.sayayi.lib.antlr4.syntax.SyntaxErrorFormatter
  */
 public class LocationToken implements Token
 {
@@ -37,6 +43,15 @@ public class LocationToken implements Token
   private final int stopIndex;
 
 
+  /**
+   * Creates a new location token with the given source position.
+   *
+   * @param inputStream         the character stream that this token originates from, not {@code null}
+   * @param line                the 1-based line number of the token
+   * @param charPositionInLine  the 0-based character offset within the line
+   * @param startIndex          the start index of the token in the input stream
+   * @param stopIndex           the stop index of the token in the input stream (inclusive)
+   */
   public LocationToken(@NotNull CharStream inputStream, int line, int charPositionInLine,
                        int startIndex, int stopIndex)
   {
@@ -48,36 +63,42 @@ public class LocationToken implements Token
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public CharStream getInputStream() {
     return inputStream;
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public int getLine() {
     return line;
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public int getCharPositionInLine() {
     return charPositionInLine;
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public int getStartIndex() {
     return startIndex;
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public int getStopIndex() {
     return stopIndex;
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public String getText() {
     return inputStream.getText(new Interval(startIndex, stopIndex));
@@ -128,6 +149,11 @@ public class LocationToken implements Token
   }
 
 
+  /**
+   * Returns a string representation of this token, formatted similarly to ANTLR's {@code CommonToken}.
+   *
+   * @return  a string containing the token's index range, text, line, and character position
+   */
   @Override
   public String toString()
   {

@@ -26,8 +26,19 @@ import java.util.ArrayDeque;
 
 
 /**
+ * Internal utility class that provides heap-based iterative tree walking implementations.
+ * <p>
+ * This class contains the actual walking logic used by the {@link Walker} enum constants. All walking methods use
+ * iterative algorithms with heap-based data structures instead of recursion, which prevents stack overflow errors when
+ * traversing deeply nested parse trees.
+ * <p>
+ * This class is package-private and not intended for direct use outside this package. Use the {@link Walker} enum
+ * for tree traversal instead.
+ *
  * @author Jeroen Gremmen
  * @since 0.1.0
+ *
+ * @see Walker
  */
 final class ParseTreeWalker
 {
@@ -40,6 +51,14 @@ final class ParseTreeWalker
 
 
   /**
+   * Walks the parse tree and invokes only rule-specific exit methods on the listener.
+   * <p>
+   * This method performs a depth-first traversal of the parse tree, calling exit methods on parser rules after all
+   * their children have been processed. No enter methods, terminal node visits, or error node visits are invoked.
+   *
+   * @param listener           the parse tree listener to receive exit callbacks, not {@code null}
+   * @param parserRuleContext  the root context to start walking from, not {@code null}
+   *
    * @since 0.2.0
    */
   @Contract(mutates = "param2")
@@ -64,6 +83,15 @@ final class ParseTreeWalker
 
 
   /**
+   * Walks the parse tree and invokes rule-specific enter and exit methods on the listener.
+   * <p>
+   * This method performs a depth-first traversal of the parse tree, calling both enter and exit methods on parser
+   * rules. Enter methods are called before processing a rule's children, and exit methods are called after. Terminal
+   * and error node visits are not invoked.
+   *
+   * @param listener           the parse tree listener to receive enter and exit callbacks, not {@code null}
+   * @param parserRuleContext  the root context to start walking from, not {@code null}
+   *
    * @since 0.2.0
    */
   @Contract(mutates = "param2")
@@ -91,6 +119,16 @@ final class ParseTreeWalker
   }
 
 
+  /**
+   * Walks the parse tree and invokes all listener methods for a complete traversal.
+   * <p>
+   * This method performs a full depth-first traversal of the parse tree, invoking all listener callbacks including
+   * enter/exit methods for rules, terminal node visits, and error node visits. This provides the most comprehensive
+   * tree traversal.
+   *
+   * @param listener           the parse tree listener to receive all callbacks, not {@code null}
+   * @param parserRuleContext  the root context to start walking from, not {@code null}
+   */
   @Contract(mutates = "param2")
   static void walkFullIterative(@NotNull ParseTreeListener listener, @NotNull ParserRuleContext parserRuleContext) {
     FULL_HEAP_WALKER.walk(listener, parserRuleContext);

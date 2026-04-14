@@ -22,9 +22,38 @@ import org.jetbrains.annotations.NotNull;
 
 
 /**
- * An interface for building a syntax error.
+ * Builder interface for constructing and reporting syntax errors with detailed location information.
+ * <p>
+ * This interface provides a fluent API for specifying the location of a syntax error using tokens or syntax tree
+ * nodes. It allows you to define the error's start and stop positions, attach a root cause exception, and then report
+ * the error. This makes it easy to construct informative error messages that pinpoint exactly where problems occur
+ * in parsed input.
+ * <p>
+ * The builder supports both single-point errors (using {@link #with(Token)}) and range-based errors
+ * (using {@link #withStart(Token)} and {@link #withStop(Token)}). You can work with either raw tokens or syntax tree
+ * nodes, depending on what's available in your parsing context.
+ * <p>
+ * Typical usage patterns:
+ * <pre>
+ *   // For a single-token error
+ *   builder.with(token)
+ *          .report();
+ *
+ *   // For a multi-token error range
+ *   builder.withStart(startToken)
+ *          .withStop(stopToken)
+ *          .report();
+ *
+ *   // With a root cause exception
+ *   builder.with(token)
+ *          .withCause(exception)
+ *          .report();
+ * </pre>
  *
  * @since 0.6.0
+ *
+ * @see SyntaxErrorException
+ * @see SyntaxErrorFormatter
  */
 public interface SyntaxErrorBuilder
 {
@@ -125,15 +154,18 @@ public interface SyntaxErrorBuilder
 
 
   /**
-   * Report a syntax error based on the error message and start and stop tokens.
+   * Builds and throws a syntax error exception with all configured information.
    * <p>
-   * In order for this method to succeed, it is required that the start and stop tokens have been set.
-   * Please note that no sanity checks regarding the start and stop tokens are performed. E.g., if the
-   * start token comes after the stop token, expect the unexpected.
+   * This method constructs a {@link SyntaxErrorException} using the start and stop tokens, optional cause, and
+   * generates a formatted error message showing the error location. Both start and stop tokens must be set before
+   * calling this method.
    * <p>
-   * This method will always result in an exception being thrown.
+   * <b>Note:</b> This method always throws an exception and never returns normally. No validation is performed on
+   * token positions (e.g., whether start comes before stop), so ensure tokens are set correctly to get meaningful
+   * error messages.
    *
-   * @throws NullPointerException  if start or stop token is not set
+   * @throws NullPointerException  if start or stop token has not been set
+   * @throws SyntaxErrorException  always thrown with the constructed error details
    */
   @Contract("-> fail")
   void report();
