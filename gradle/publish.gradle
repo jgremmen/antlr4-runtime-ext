@@ -19,15 +19,42 @@
 apply plugin: 'org.danilopianini.publish-on-central'
 
 
+publishOnCentral {
+  repoOwner = 'jgremmen'
+
+  projectLongName = 'ANTLR4 Runtime Extensions'
+  projectDescription = project.description
+
+  licenseName = 'Apache License, Version 2.0'
+  licenseUrl = 'https://www.apache.org/licenses/LICENSE-2.0'
+
+  projectUrl = 'https://github.com/jgremmen/antlr4-runtime-ext'
+  scmConnection = 'scm:git:git://github.com/jgremmen/antlr4-runtime-ext.git'
+}
+
+
 def snapshot = version.toString().endsWith('-SNAPSHOT')
 
 
-zipMavenCentralPortalPublication.dependsOn publishOSSRHPublicationToProjectLocalRepository
+publishing {
+  publications {
+    withType(MavenPublication).configureEach {
+      pom {
+        inceptionYear = '2022'
 
+        developers {
+          developer {
+            id = 'jgremmen'
+            name = 'Jeroen Gremmen'
+            email = 'jeroen.gremmen@sayayi.de'
+          }
+        }
+      }
+    }
+  }
 
-if (snapshot)
-{
-  publishing {
+  if (snapshot)
+  {
     repositories {
       maven {
         name = 'mavenCentralSnapshot'
@@ -47,36 +74,6 @@ if (snapshot)
 }
 
 
-publishOnCentral {
-  repoOwner = 'jgremmen'
-
-  projectLongName = 'ANTLR4 Runtime Extensions'
-  projectDescription = project.description
-
-  licenseName = 'Apache License, Version 2.0'
-  licenseUrl = 'https://www.apache.org/licenses/LICENSE-2.0'
-}
-
-
-publishing {
-  publications {
-    withType(MavenPublication).configureEach {
-      pom {
-        inceptionYear = '2022'
-
-        developers {
-          developer {
-            id = 'jgremmen'
-            name = 'Jeroen Gremmen'
-            email = 'jeroen.gremmen@sayayi.de'
-          }
-        }
-      }
-    }
-  }
-}
-
-
 tasks.register('publishToProjectLocalRepository') {
   group = PublishingPlugin.PUBLISH_TASK_GROUP
   description = 'Create a local repository with releasable artifacts.'
@@ -87,13 +84,13 @@ tasks.register('publishToProjectLocalRepository') {
 }
 
 
-tasks.register('release-antlr4-runtime-ext-artifacts') {
+tasks.register('release-artifacts') {
   group = 'release'
-  description = "Release ${version} artifacts to Maven Central Repository."
+  description = "Release ${version} ${snapshot ? 'snapshot ' : ''}artifacts to Maven Central Repository."
 
   inputs.property('snapshot', snapshot)
 
-  dependsOn 'publishToProjectLocalRepository'
+  dependsOn 'publishOSSRHPublicationToProjectLocalRepository'
 
   if (snapshot)
     dependsOn 'publishOSSRHPublicationToMavenCentralSnapshotRepository'
@@ -107,5 +104,11 @@ tasks.register('release-antlr4-runtime-ext-artifacts') {
 
 
 tasks.named('zipMavenCentralPortalPublication') {
-  mustRunAfter 'publishToProjectLocalRepository'
+  mustRunAfter 'publishOSSRHPublicationToProjectLocalRepository'
+}
+
+
+tasks.configureEach {
+  if (name.endsWith('ToMavenLocal') || (snapshot && name.contains('MavenCentralPortal')))
+    group = null
 }

@@ -6,8 +6,6 @@ plugins {
 }
 
 
-//noinspection GrDeprecatedAPIUsage
-project.buildDir = file('.build')
 layout.buildDirectory = '.build'
 
 
@@ -28,6 +26,9 @@ java {
   toolchain {
     languageVersion = JavaLanguageVersion.of(21)
   }
+
+  withSourcesJar()
+  withJavadocJar()
 }
 
 
@@ -72,7 +73,6 @@ dependencies {
 
 
 compileTestJava.dependsOn generateTestGrammarSource
-jar.dependsOn test
 
 
 def resolvedAntlr4RuntimeVersion = configurations
@@ -137,21 +137,15 @@ tasks.withType(Jar).configureEach {
 }
 
 
-tasks.register('javadocJar', Jar) {
-  archiveClassifier.set('javadoc')
-  from javadoc
-}
-
-
-tasks.register('sourcesJar', Jar) {
-  dependsOn classes
-
-  archiveClassifier.set('sources')
-  from sourceSets.main.allSource
-}
+jar.dependsOn test
 
 
 apply from: 'gradle/publish.gradle'
+
+
+clean {
+  delete layout.projectDirectory.dir('build')
+}
 
 
 wrapper {
