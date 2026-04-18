@@ -1,46 +1,50 @@
-# Version [0.5.1](https://github.com/jgremmen/antlr4-runtime-ext/releases/tag/0.5.1) (2024-11-14)
+# Version [0.5.1](https://github.com/jgremmen/antlr4-runtime-ext/tree/0.5.1) (2024-11-14)
 
 ## Breaking Changes
 
-### Java module system support (module-info.java)
+### Java Module System support
 
-A `module-info.java` has been added, declaring the module `de.sayayi.lib.antlr`. The module exports the following
-packages:
+A `module-info.java` has been added, turning this library into a named Java module (`de.sayayi.lib.antlr`). Classes in packages not listed in the module descriptor are no longer accessible to consumers. If your project uses the Java Module System, you must add a `requires de.sayayi.lib.antlr;` directive to your own `module-info.java`.
 
-- `de.sayayi.lib.antlr4`
-- `de.sayayi.lib.antlr4.walker`
-- `de.sayayi.lib.antlr4.syntax`
+### `antlr4-runtime` dependency scope changed from `api` to `implementation`
 
-Internal implementation classes in non-exported packages are no longer accessible when running on the module path.
-Projects using the class path are not affected by this change.
+The `org.antlr:antlr4-runtime` dependency has been changed from `api` to `implementation`. This means it is no longer transitively available on the compile classpath of consumers. If your project directly uses classes from `antlr4-runtime`, you must now declare the dependency explicitly in your own build script:
 
-### Dependency scope changes
+```groovy
+implementation "org.antlr:antlr4-runtime:4.13.2"
+```
 
-| Dependency | Type | Old scope | New scope |
+### `jetbrains:annotations` dependency scope changed from `compileOnly` to `compileOnlyApi`
+
+The `org.jetbrains:annotations` dependency scope has been changed from `compileOnly` to `compileOnlyApi`, and the version range has been widened from `25.0.+` to `[24.0,26.1)`. This makes the annotations transitively visible at compile time for consumers. No action is required unless you have pinned a specific version of `org.jetbrains:annotations` outside the new range.
+
+### Dependency changes
+
+| Dependency | Scope | 0.5.0 | 0.5.1 |
 |---|---|---|---|
-| org.antlr:antlr4-runtime 4.13.2 | runtime | compile (transitive) | compile (non-transitive) |
-| org.jetbrains:annotations | compile | compile (non-transitive) | compile (transitive) |
-
-The `antlr4-runtime` dependency scope changed from `api` (transitive) to `implementation` (non-transitive). Projects
-that rely on `antlr4-runtime` classes must now declare the dependency explicitly.
-
-The JetBrains annotations dependency scope changed from `compileOnly` (non-transitive) to `compileOnlyApi`
-(transitive). The accepted version range widened from `25.0.+` to `[24.0,26.1)`.
+| `org.antlr:antlr4-runtime` | compile | `4.13.2` (api) | `4.13.2` (implementation) |
+| `org.jetbrains:annotations` | compile | `25.0.+` (compileOnly) | `[24.0,26.1)` (compileOnlyApi) |
 
 ## New Features
 
-### walk() method is now protected
+### `walk` method is now `protected`
 
-The `walk()` method in `AbstractAntlr4Parser` has been changed from `private` to `protected`. This allows
-subclasses to call `walk()` independently from the `parse()` method, e.g. to walk multiple listeners over
-the same parse tree:
+The `AbstractAntlr4Parser.walk(ParseTreeListener, ParserRuleContext)` method has been changed from `private` to `protected`. Previously, tree walking was only performed internally as part of the `parse` method. With this change, subclasses can walk a `ParserRuleContext` with a different listener after the initial parse has completed, or re-walk the same context multiple times.
+
+The method selects the walking strategy based on whether the listener implements `WalkerSupplier`. If it does, the walker returned by `WalkerSupplier.getWalker()` is used; otherwise, the default `WALK_FULL_RECURSIVE` strategy is applied.
 
 ```java
-var ctx = parse(lexer, MyParser::new, MyParser::startRule);
-walk(firstListener, ctx);
-walk(secondListener, ctx);
+// In a subclass of AbstractAntlr4Parser:
+var context = parse(lexer, MyParser::new, MyParser::myRule);
+walk(new FirstPassListener(), context);
+walk(new SecondPassListener(), context);
 ```
+
+### Internal token class renamed to `LexerPositionToken`
+
+The internal token class `PositionToken` (used to represent the position of a lexer error) has been renamed to `LexerPositionToken`. Its `getType()` method now returns `Token.INVALID_TYPE` instead of `0`, which correctly represents an invalid token type. This change does not affect the public API.
 
 ## Bug Fixes
 
 _No bug fixes in this release._
+

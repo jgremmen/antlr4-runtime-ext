@@ -1,81 +1,80 @@
-# Version [0.5.3](https://github.com/jgremmen/antlr4-runtime-ext/releases/tag/0.5.3) (2025-05-27)
+# Version [0.5.3](https://github.com/jgremmen/antlr4-runtime-ext/tree/0.5.3) (2025-05-27)
 
 ## Breaking Changes
 
-### Deprecated syntaxError() methods
+### Deprecation of `syntaxError` methods in `AbstractAntlr4Parser`
 
-The following `syntaxError()` methods in `AbstractAntlr4Parser` have been deprecated for removal. Use the new
-builder-based `syntaxError(String)` method instead.
+The following methods have been deprecated for removal:
+
+- `syntaxError(ParserRuleContext, String)`
+- `syntaxError(ParserRuleContext, String, Exception)`
+- `syntaxError(TerminalNode, String)`
+- `syntaxError(TerminalNode, String, Exception)`
+- `syntaxError(Token, String)`
+- `syntaxError(Token, String, Exception)`
+
+These methods are replaced by the new `SyntaxErrorBuilder` API, accessible via `syntaxError(String)`. Instead of calling:
 
 ```java
-// deprecated methods
-syntaxError(ParserRuleContext ctx, String errorMsg)
-syntaxError(ParserRuleContext ctx, String errorMsg, Exception cause)
-syntaxError(TerminalNode terminalNode, String errorMsg)
-syntaxError(TerminalNode terminalNode, String errorMsg, Exception cause)
-syntaxError(Token token, String errorMsg)
-syntaxError(Token token, String errorMsg, Exception cause)
+syntaxError(ctx, "unexpected token");
 ```
 
-Replace calls with the builder pattern:
+use the builder pattern:
 
 ```java
-// before
-syntaxError(ctx, "unexpected value");
-
-// after
-syntaxError("unexpected value").with(ctx).report();
-
-// before (with cause)
-syntaxError(token, "invalid input", cause);
-
-// after
-syntaxError("invalid input").with(token).withCause(cause).report();
-```
-
-The builder provides more flexibility by allowing independent control over start and stop tokens:
-
-```java
-syntaxError("range is invalid")
-    .withStart(startCtx)
-    .withStop(stopCtx)
+syntaxError("unexpected token")
+    .with(ctx)
     .report();
 ```
 
+If a cause exception needs to be provided:
+
+```java
+syntaxError("unexpected token")
+    .with(ctx)
+    .withCause(cause)
+    .report();
+```
+
+The builder allows separate control over start and stop tokens using `withStart(...)` and `withStop(...)`.
+
+### Renamed `parserSupplier` parameter to `parserInstantiator`
+
+The `parse` method parameter previously named `parserSupplier` has been renamed to `parserInstantiator`. This is a source-compatible change unless the parameter name was referenced explicitly (e.g. in documentation or reflection-based code).
+
 ## New Features
 
-### SyntaxErrorBuilder interface
+### `SyntaxErrorBuilder` interface
 
-A new `SyntaxErrorBuilder` interface has been added (as an inner type of `AbstractAntlr4Parser`) for constructing
-syntax errors using the builder pattern. It is obtained via the new `syntaxError(String)` method:
+A new public interface `AbstractAntlr4Parser.SyntaxErrorBuilder` has been introduced. It provides a fluent API for constructing and reporting syntax errors. The builder supports the following methods:
 
-```java
-protected SyntaxErrorBuilder syntaxError(String errorMessage)
-```
+- `withStart(Token)` / `withStart(SyntaxTree)` - set the start location of the error
+- `withStop(Token)` / `withStop(SyntaxTree)` - set the stop location of the error
+- `with(Token)` / `with(SyntaxTree)` - set both start and stop to the same location
+- `withCause(Exception)` - attach a root cause
+- `report()` - format and throw the exception
 
-The builder provides methods for specifying start and stop tokens individually (`withStart()`, `withStop()`),
-or setting both at once via `with(Token)` or `with(SyntaxTree)`. The `report()` method triggers exception creation
-and always throws.
+The builder is obtained by calling the new `syntaxError(String)` method on `AbstractAntlr4Parser`.
 
-### LocationToken class
+### `LocationToken` class
 
-A new public `LocationToken` class has been added to the `de.sayayi.lib.antlr4` package. It is a minimal `Token`
-implementation that carries only location information (line, column, start/stop index, and input stream). It is
-useful for constructing syntax error tokens in situations where a full `CommonToken` is not available, such as lexer
-error recovery.
-
-### Constructor with keepConsoleErrorListeners option
-
-A new constructor has been added to `AbstractAntlr4Parser`:
+The previously private inner class `LexerPositionToken` has been extracted into a public class `LocationToken`. It implements the `Token` interface and provides location information (line, column, start/stop index) without being tied to a specific lexer token. This is useful for constructing synthetic tokens for error reporting.
 
 ```java
-protected AbstractAntlr4Parser(
-    SyntaxErrorFormatter syntaxErrorFormatter,
-    boolean keepConsoleErrorListeners)
+var token = new LocationToken(inputStream, line, charPositionInLine, startIndex, stopIndex);
 ```
 
-By default, the `ConsoleErrorListener` instances added by ANTLR4 to lexer and parser instances are removed. Set
-`keepConsoleErrorListeners` to `true` to retain them.
+### Constructor option to keep console error listeners
+
+A new constructor `AbstractAntlr4Parser(SyntaxErrorFormatter, boolean)` has been added. The second parameter `keepConsoleErrorListeners` controls whether the `ConsoleErrorListener` instances automatically added by ANTLR4 to the lexer and parser are removed. The default behavior (removing them) is unchanged. Set the parameter to `true` to retain console error output.
+
+### `WalkerSupplier` support in `walk` method
+
+The `walk` method now checks if the provided `ParseTreeListener` implements `WalkerSupplier`. If it does, the walker returned by `WalkerSupplier.getWalker()` is used instead of the default `Walker.WALK_FULL_RECURSIVE`.
+
+### Protected access for `GenericSyntaxErrorFormatter.Location` constructor
+
+The `Location` inner class constructor has been changed from private to protected, allowing subclasses of `GenericSyntaxErrorFormatter` to create `Location` instances.
 
 ## Bug Fixes
 

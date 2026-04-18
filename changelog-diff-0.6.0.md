@@ -1,10 +1,13 @@
-# Version [0.6.0](https://github.com/jgremmen/antlr4-runtime-ext/releases/tag/0.6.0) (2025-06-07)
+# Version [0.6.0](https://github.com/jgremmen/antlr4-runtime-ext/tree/0.6.0) (2025-06-07)
 
 ## Breaking Changes
 
-### Deprecated syntaxError() methods removed
+### Removed deprecated syntaxError() methods
 
-All `syntaxError()` methods deprecated in 0.5.3 have been removed:
+The deprecated `syntaxError()` overloads that accepted `ParserRuleContext`, `TerminalNode`, or `Token` parameters
+directly have been removed. These methods were deprecated in version 0.5.3.
+
+The following methods no longer exist:
 
 ```java
 syntaxError(ParserRuleContext ctx, String errorMsg)
@@ -15,46 +18,66 @@ syntaxError(Token token, String errorMsg)
 syntaxError(Token token, String errorMsg, Exception cause)
 ```
 
-Use the builder-based `syntaxError(String)` method instead. See the 0.5.3 changelog for migration examples.
+Use the builder-based approach introduced in 0.5.3 instead:
 
-### Recursive walker variants removed
+```java
+// single token
+syntaxError("invalid input").with(token).withCause(cause).report();
 
-The following recursive walker variants have been removed from the `Walker` enum:
+// parser rule context
+syntaxError("unexpected value").with(ctx).report();
+
+// terminal node
+syntaxError("unexpected symbol").with(terminalNode).report();
+
+// explicit start/stop range
+syntaxError("range is invalid")
+    .withStart(startCtx)
+    .withStop(stopCtx)
+    .report();
+```
+
+### Removed analyseStartStopToken() method
+
+The protected method `analyseStartStopToken(Token, RecognitionException)` has been removed. This method was used
+internally to determine start and stop tokens from an offending symbol or recognition exception. The logic has been
+replaced by the new `lexerSyntaxError()` and `parserSyntaxError()` methods, which handle token resolution
+internally.
+
+If you were overriding `analyseStartStopToken()`, replace it by overriding `createTokenRecognitionMessage()` for
+lexer errors, or by overriding one of the `createInputMismatchMessage()`, `createMissingTokenMessage()`,
+`createUnwantedTokenMessage()`, or `createNoViableAlternativeMessage()` methods for parser errors.
+
+### Removed recursive Walker enum constants
+
+The following `Walker` enum constants have been removed:
 
 - `WALK_FULL_RECURSIVE`
 - `WALK_EXIT_RULES_RECURSIVE`
 - `WALK_ENTER_AND_EXIT_RULES_RECURSIVE`
 
-The heap-based (iterative) variants remain and should be used instead. The following table shows the migration path:
+These walkers used recursion to traverse the parse tree, which could cause `StackOverflowError` on deeply nested
+input. Use the heap-based alternatives instead:
 
-| Removed | Replacement |
+| Removed constant | Replacement |
 |---|---|
 | `WALK_FULL_RECURSIVE` | `WALK_FULL_HEAP` |
 | `WALK_EXIT_RULES_RECURSIVE` | `WALK_EXIT_RULES_HEAP` |
 | `WALK_ENTER_AND_EXIT_RULES_RECURSIVE` | `WALK_ENTER_AND_EXIT_RULES_HEAP` |
 
-### Default walker changed to WALK_FULL_HEAP
-
-The default walker used by `AbstractAntlr4Parser.walk()` and the default implementation of
-`WalkerSupplier.getWalker()` has changed from `WALK_FULL_RECURSIVE` to `WALK_FULL_HEAP`. This affects all
-listeners that do not explicitly specify a walker.
-
-### analyseStartStopToken() method removed
-
-The protected method `analyseStartStopToken(Token, RecognitionException)` has been removed from
-`AbstractAntlr4Parser`. The parser now handles token analysis internally. If you relied on this method in a
-subclass, use the `SyntaxErrorBuilder` methods `withStart()` and `withStop()` to set tokens explicitly.
+The default walker used by `AbstractAntlr4Parser.walkParserRule()` has changed from `WALK_FULL_RECURSIVE` to
+`WALK_FULL_HEAP`. The same applies to `WalkerSupplier.getWalker()`.
 
 ### createException() is no longer abstract
 
-The `createException()` method now has a default implementation that returns a `SyntaxErrorException`. Subclasses
-that override this method are not affected. Subclasses that previously had to implement this method can now remove
-the override if the default `SyntaxErrorException` is sufficient.
+The `createException(Token, Token, String, String, Exception)` method in `AbstractAntlr4Parser` is no longer
+abstract. It now has a default implementation that returns a `SyntaxErrorException` instance. Subclasses that
+previously had to implement this method can remove their implementation if the default behavior is sufficient.
 
-### SyntaxErrorBuilder moved to syntax package
+### SyntaxErrorBuilder moved to separate class
 
-The `SyntaxErrorBuilder` interface has been extracted from `AbstractAntlr4Parser` and moved to the
-`de.sayayi.lib.antlr4.syntax` package as a top-level interface. Update imports accordingly:
+The `SyntaxErrorBuilder` interface, previously an inner type of `AbstractAntlr4Parser`, has been extracted into its
+own top-level class at `de.sayayi.lib.antlr4.syntax.SyntaxErrorBuilder`. Update import statements accordingly:
 
 ```java
 // before
@@ -64,89 +87,121 @@ import de.sayayi.lib.antlr4.AbstractAntlr4Parser.SyntaxErrorBuilder;
 import de.sayayi.lib.antlr4.syntax.SyntaxErrorBuilder;
 ```
 
-The `SyntaxErrorBuilder.with(Token)` method is now a default method that delegates to `withStart(token).withStop(token)`.
+The `SyntaxErrorBuilder.with(Token)` method has been changed from an abstract method to a default method that
+delegates to `withStart(token).withStop(token)`.
 
-### AbstractVocabulary is now sealed after construction
+### Error handling pipeline replaced
 
-The vocabulary can no longer be modified after the constructor returns. Calling `add()` outside of the `addTokens()`
-method now throws an `IllegalStateException`.
+The internal error handling in `AbstractAntlr4Parser` has been restructured. Instead of using a shared
+`BaseErrorListener` for both lexer and parser, separate listeners are now installed. The parser additionally uses a
+custom `DefaultErrorStrategy` subclass (`ParserErrorHandler`) that delegates error message creation to overridable
+methods in `AbstractAntlr4Parser`.
+
+This change means that all parser error messages (input mismatch, missing token, unwanted token, no viable
+alternative) are now constructed through dedicated protected methods rather than being passed through as raw ANTLR
+messages. If you relied on the exact format of ANTLR's default error messages, the output may differ.
+
+### AbstractVocabulary is sealed after construction
+
+`AbstractVocabulary` now prevents modifications after the constructor completes. Calling `add()` outside of
+`addTokens()` throws an `IllegalStateException`. This ensures vocabulary consistency after initialization.
 
 ## New Features
 
 ### SyntaxErrorException
 
-A new `SyntaxErrorException` class has been added to the `de.sayayi.lib.antlr4.syntax` package. It is the default
-exception thrown by `createException()`. The exception provides access to:
-
-- `getStartToken()` / `getStopToken()` - the token range where the error occurred
-- `getErrorMessage()` - the short error message
-- `getFormattedMessage()` - the visual error representation with source context and markers
-- `getMessage()` - combines the error message and formatted message
-
-### Custom error message methods
-
-Several new protected methods have been added to `AbstractAntlr4Parser` to allow customization of parser error
-messages. Override these methods to produce error messages tailored to your grammar:
-
-#### createTokenRecognitionMessage
-
-Called when the lexer fails to determine the next token:
+A new `SyntaxErrorException` class has been added to the `de.sayayi.lib.antlr4.syntax` package. It is a
+`RuntimeException` that carries the start and stop tokens, the formatted error message (with visual location
+marker), and the original error message.
 
 ```java
-protected String createTokenRecognitionMessage(
-    Lexer lexer, String text, boolean hasEOF)
+try {
+  compiler.compile(input);
+} catch(SyntaxErrorException ex) {
+  System.err.println(ex.getErrorMessage());
+  System.err.println(ex.getFormattedMessage());
+  Token start = ex.getStartToken();
+  Token stop = ex.getStopToken();
+}
 ```
 
-#### createInputMismatchMessage
+The `createException()` method in `AbstractAntlr4Parser` returns a `SyntaxErrorException` by default. Override it
+to return a different exception type.
 
-Called when the parser encounters a token that does not match the expected input:
+### Customizable error message methods
+
+Several new protected methods have been added to `AbstractAntlr4Parser` for customizing syntax error messages.
+Override these methods to control the wording of error messages produced during parsing.
+
+#### createTokenRecognitionMessage()
+
+Called when the lexer fails to match the input to any token rule.
 
 ```java
+@Override
+protected String createTokenRecognitionMessage(
+    Lexer lexer, String text, boolean hasEOF) {
+  return "unrecognized input: " + getQuotedDisplayText(text);
+}
+```
+
+#### createInputMismatchMessage()
+
+Called when the parser encounters a token that does not match any expected alternative.
+
+```java
+@Override
 protected String createInputMismatchMessage(
     Parser parser, IntervalSet expectedTokens,
-    Token mismatchLocationNearToken)
+    Token mismatchLocationNearToken) {
+  return "expected " + expectedTokens.toString(parser.getVocabulary());
+}
 ```
 
-#### createMissingTokenMessage
+#### createMissingTokenMessage()
 
-Called when the parser detects a missing token:
+Called when the parser determines a required token is missing.
 
-```java
-protected String createMissingTokenMessage(
-    Parser parser, IntervalSet expectedTokens,
-    Token missingLocationNearToken)
-```
+#### createUnwantedTokenMessage()
 
-#### createUnwantedTokenMessage
+Called when the parser encounters an extraneous token that should not be present.
 
-Called when the parser encounters an extraneous token:
+#### createNoViableAlternativeMessage()
 
-```java
-protected String createUnwantedTokenMessage(
-    Parser parser, Token unwantedToken,
-    IntervalSet expectedTokens)
-```
+Called when the parser cannot decide which path to take based on the remaining input.
 
-#### createNoViableAlternativeMessage
+### Token display text methods
 
-Called when the parser cannot decide which of two or more paths to take:
+Several new protected methods have been added for controlling how tokens are displayed in error messages:
 
-```java
-protected String createNoViableAlternativeMessage(
-    Parser parser, Token startToken,
-    Token offendingToken)
-```
+#### getTokenDisplayText()
 
-### Token display helper methods
+Returns a human-readable representation of a token. Tokens with text are quoted using `getQuotedDisplayText()`.
+Tokens without text fall back to the vocabulary display name or a type-based placeholder.
 
-New protected methods for consistent token display in error messages:
+#### getEOFTokenDisplayText()
 
-- `isEOFToken(Token)` - returns `true` if the token is of type `EOF`
-- `getEOFTokenDisplayText()` - returns the display text for the EOF token (default: `<EOF>`)
-- `getTokenDisplayText(Parser, Token)` - returns the display text for a token using the parser's vocabulary
-- `getQuotedDisplayText(String)` - returns the text enclosed in quotes with `\n`, `\r`, `\t` escaped
+Returns the display text for the EOF token. Defaults to `<EOF>`. Override this to change how end-of-input is
+displayed in error messages.
+
+#### getQuotedDisplayText()
+
+Quotes and escapes a text string for display in error messages. The method escapes `\n`, `\r` and `\t` characters
+and selects a quote character that does not conflict with the text content.
+
+### isEOFToken() method
+
+A new protected method `isEOFToken(Token)` has been added to `AbstractAntlr4Parser`. It returns `true` if the
+given token is of type `Token.EOF`.
+
+### Default EOF entry in AbstractVocabulary
+
+`AbstractVocabulary` now automatically registers a literal `<EOF>` mapping for the `Token.EOF` token type. This
+entry can be overwritten by calling `add(Token.EOF, ...)` in `addTokens()`.
 
 ## Bug Fixes
 
-- Fixed `getTokenDisplayText()` returning raw token text instead of the vocabulary display name.
-- Fixed `getQuotedDisplayText()` not properly handling text containing quote characters.
+- Fixed `getQuotedDisplayText()` not properly handling text that contains common quote characters. The method now
+  cycles through multiple quote styles to find one not present in the text.
+- Fixed `getTokenDisplayText()` returning unquoted text for tokens that are not EOF and not enclosed in angle
+  brackets.
