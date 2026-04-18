@@ -1,6 +1,6 @@
 [versions]
 # antlr4-runtime-ext version
-antlr4-runtime-ext = '0.7.0-SNAPSHOT'
+antlr4-runtime-ext = '0.7.0'
 
 antlr4 = '4.13.2'
 jetbrains-annotations = '[24.0,26.2)'
