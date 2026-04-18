@@ -86,7 +86,7 @@ tasks.register('publishToProjectLocalRepository') {
 
 tasks.register('release-artifacts') {
   group = 'release'
-  description = "Release ${version} ${snapshot ? 'snapshot ' : ''}artifacts to Maven Central Repository."
+  description = "Release ${project.name} ${snapshot ? 'snapshot ' : ''}artifacts to Maven Central Repository."
 
   inputs.property('snapshot', snapshot)
 
