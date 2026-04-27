@@ -42,9 +42,6 @@ import java.util.ArrayDeque;
  */
 final class ParseTreeWalker
 {
-  private static final IterativeParseTreeWalker FULL_HEAP_WALKER = new IterativeParseTreeWalker();
-
-
   private ParseTreeWalker() {
     // no instance
   }
@@ -164,6 +161,6 @@ final class ParseTreeWalker
    */
   @Contract(mutates = "param2")
   static void walkFullIterative(@NotNull ParseTreeListener listener, @NotNull ParserRuleContext parserRuleContext) {
-    FULL_HEAP_WALKER.walk(listener, parserRuleContext);
+    new IterativeParseTreeWalker().walk(listener, parserRuleContext);
   }
 }
