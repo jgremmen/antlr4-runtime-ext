@@ -16,6 +16,7 @@
 package de.sayayi.lib.antlr4;
 
 import org.antlr.v4.runtime.CharStream;
+import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.TokenSource;
 import org.antlr.v4.runtime.misc.Interval;
@@ -44,6 +45,26 @@ public class LocationToken implements Token
 
 
   /**
+   * Creates a new location token from the given parser rule context.
+   * <p>
+   * The token's position is derived from the start token of the context, while the stop index
+   * is taken from the context's stop token.
+   *
+   * @param ctx  the parser rule context to extract location information from, not {@code null}
+   */
+  public LocationToken(@NotNull ParserRuleContext ctx)
+  {
+    final var start = ctx.getStart();
+
+    this.inputStream = start.getInputStream();
+    this.line = start.getLine();
+    this.charPositionInLine = start.getCharPositionInLine();
+    this.startIndex = start.getStartIndex();
+    this.stopIndex = ctx.getStop().getStopIndex();
+  }
+
+
+  /**
    * Creates a new location token with the given source position.
    *
    * @param inputStream         the character stream that this token originates from, not {@code null}
@@ -63,42 +84,68 @@ public class LocationToken implements Token
   }
 
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   *
+   * @return  the character stream this token originates from, never {@code null}
+   */
   @Override
   public CharStream getInputStream() {
     return inputStream;
   }
 
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   *
+   * @return  the 1-based line number of this token
+   */
   @Override
   public int getLine() {
     return line;
   }
 
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   *
+   * @return  the 0-based character offset within the line
+   */
   @Override
   public int getCharPositionInLine() {
     return charPositionInLine;
   }
 
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   *
+   * @return  the start index of this token in the input stream
+   */
   @Override
   public int getStartIndex() {
     return startIndex;
   }
 
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   *
+   * @return  the stop index (inclusive) of this token in the input stream
+   */
   @Override
   public int getStopIndex() {
     return stopIndex;
   }
 
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Returns the text covered by this token's index range from the underlying input stream.
+   *
+   * @return  the text spanned by this token
+   */
   @Override
   public String getText() {
     return inputStream.getText(new Interval(startIndex, stopIndex));
