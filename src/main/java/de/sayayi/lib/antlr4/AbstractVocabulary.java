@@ -100,14 +100,22 @@ public abstract class AbstractVocabulary implements Vocabulary
   }
 
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   *
+   * @return  the maximum token type value registered in this vocabulary
+   */
   @Override
   public int getMaxTokenType() {
     return vocabulary.lastKey();
   }
 
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   *
+   * @return  the literal name for the token type, or {@code null} if not found
+   */
   @Override
   public String getLiteralName(int tokenType)
   {
@@ -116,7 +124,11 @@ public abstract class AbstractVocabulary implements Vocabulary
   }
 
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   *
+   * @return  the symbolic name for the token type, or {@code null} if not found
+   */
   @Override
   public String getSymbolicName(int tokenType)
   {
@@ -129,6 +141,8 @@ public abstract class AbstractVocabulary implements Vocabulary
    * {@inheritDoc}
    * <p>
    * If the token type is not found in the vocabulary, the numeric token type is returned as a string.
+   *
+   * @return  the display name for the token type, never {@code null}
    */
   @Override
   public String getDisplayName(int tokenType)
@@ -141,7 +155,7 @@ public abstract class AbstractVocabulary implements Vocabulary
   /**
    * Returns a string representation of this vocabulary listing all registered tokens.
    *
-   * @return  a string containing all token entries with their literal and symbolic names
+   * @return  a string containing all token entries with their type and literal name
    */
   @Override
   public String toString()
@@ -151,7 +165,7 @@ public abstract class AbstractVocabulary implements Vocabulary
         .stream()
         .map(entry -> {
           var name = entry.getValue();
-          return "{token=" + entry.getKey() + ",literal=" + name.literal() + ",symbol=" + name.symbol() + '}';
+          return "{token=" + entry.getKey() + ",literal=" + name.literal() + '}';
         })
         .collect(joining(",", "Vocabulary[", "]"));
   }
