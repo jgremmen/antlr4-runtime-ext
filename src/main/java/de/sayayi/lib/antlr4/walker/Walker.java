@@ -35,6 +35,7 @@ import static de.sayayi.lib.antlr4.walker.ParseTreeWalker.*;
  * Choose the appropriate walker based on which listener callbacks you need during traversal:
  * <ul>
  *   <li>Use {@link #WALK_FULL_HEAP} for complete tree traversal with all callbacks</li>
+ *   <li>Use {@link #WALK_ENTER_RULES_HEAP} when you only need rule enter callbacks</li>
  *   <li>Use {@link #WALK_EXIT_RULES_HEAP} when you only need rule exit callbacks</li>
  *   <li>
  *     Use {@link #WALK_ENTER_AND_EXIT_RULES_HEAP} when you need both enter and exit callbacks but not
@@ -58,6 +59,27 @@ public enum Walker
     @Override
     public void walk(@NotNull ParseTreeListener listener, @NotNull ParserRuleContext parserRuleContext) {
       walkFullIterative(listener, parserRuleContext);
+    }
+  },
+
+
+  /**
+   * Walk and invoke rule-specific enter methods only using the heap.
+   * <p>
+   * This walker never invokes the following methods:
+   * <ul>
+   *   <li>{@link ParseTreeListener#enterEveryRule(ParserRuleContext)}</li>
+   *   <li>{@link ParseTreeListener#exitEveryRule(ParserRuleContext)}</li>
+   *   <li>{@link ParseTreeListener#visitTerminal(TerminalNode)}</li>
+   *   <li>{@link ParseTreeListener#visitErrorNode(ErrorNode)}</li>
+   * </ul>
+   *
+   * @since 0.7.1
+   */
+  WALK_ENTER_RULES_HEAP {
+    @Override
+    public void walk(@NotNull ParseTreeListener listener, @NotNull ParserRuleContext parserRuleContext) {
+      walkEnterOnlyIterative(listener, parserRuleContext);
     }
   },
 

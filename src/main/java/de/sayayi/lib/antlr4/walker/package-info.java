@@ -25,6 +25,7 @@
  * strategies:
  * <ul>
  *   <li><b>Full traversal</b> - visits all nodes and invokes all listener callbacks</li>
+ *   <li><b>Enter-only traversal</b> - invokes only rule enter methods for top-down processing</li>
  *   <li><b>Exit-only traversal</b> - invokes only rule exit methods for bottom-up processing</li>
  *   <li><b>Enter/Exit traversal</b> - invokes rule enter and exit methods, skipping terminal nodes</li>
  * </ul>

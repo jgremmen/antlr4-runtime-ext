@@ -51,10 +51,43 @@ final class ParseTreeWalker
 
 
   /**
+   * Walks the parse tree and invokes only rule-specific enter methods on the listener.
+   * <p>
+   * This method performs a pre-order depth-first traversal of the parse tree, calling enter methods on parser rules
+   * before processing their children. No exit methods, terminal node visits, or error node visits are invoked.
+   *
+   * @param listener           the parse tree listener to receive enter callbacks, not {@code null}
+   * @param parserRuleContext  the root context to start walking from, not {@code null}
+   *
+   * @since 0.7.1
+   */
+  @Contract(mutates = "param2")
+  static void walkEnterOnlyIterative(@NotNull ParseTreeListener listener, @NotNull ParserRuleContext parserRuleContext)
+  {
+    final var nodeStack = new ArrayDeque<ParserRuleContextNode>();
+    nodeStack.addFirst(new ParserRuleContextNode(parserRuleContext));
+
+    for(ParseTree childNode; !nodeStack.isEmpty();)
+    {
+      final var parentNode = nodeStack.peekFirst();
+
+      if (parentNode.isFirst())
+        parentNode.parserRuleContext.enterRule(listener);
+
+      if ((childNode = parentNode.getNextChild()) == null)
+        nodeStack.pollFirst();
+      else if (childNode instanceof ParserRuleContext)
+        nodeStack.addFirst(new ParserRuleContextNode((ParserRuleContext)childNode));
+    }
+  }
+
+
+  /**
    * Walks the parse tree and invokes only rule-specific exit methods on the listener.
    * <p>
-   * This method performs a depth-first traversal of the parse tree, calling exit methods on parser rules after all
-   * their children have been processed. No enter methods, terminal node visits, or error node visits are invoked.
+   * This method performs a post-order depth-first traversal of the parse tree, calling exit methods on parser rules
+   * after all their children have been processed. No enter methods, terminal node visits, or error node visits are
+   * invoked.
    *
    * @param listener           the parse tree listener to receive exit callbacks, not {@code null}
    * @param parserRuleContext  the root context to start walking from, not {@code null}
@@ -86,8 +119,8 @@ final class ParseTreeWalker
    * Walks the parse tree and invokes rule-specific enter and exit methods on the listener.
    * <p>
    * This method performs a depth-first traversal of the parse tree, calling both enter and exit methods on parser
-   * rules. Enter methods are called before processing a rule's children, and exit methods are called after. Terminal
-   * and error node visits are not invoked.
+   * rules. Enter methods are called in pre-order (before processing a rule's children) and exit methods are called
+   * in post-order (after all children have been processed). Terminal and error node visits are not invoked.
    *
    * @param listener           the parse tree listener to receive enter and exit callbacks, not {@code null}
    * @param parserRuleContext  the root context to start walking from, not {@code null}
