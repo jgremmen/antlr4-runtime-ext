@@ -548,6 +548,10 @@ public abstract class AbstractAntlr4Parser
 
 
 
+  /**
+   * Internal implementation of {@link SyntaxErrorBuilder} that collects error context (tokens, cause) and
+   * delegates formatting and exception creation to the enclosing parser instance.
+   */
   private final class Builder implements SyntaxErrorBuilder
   {
     private final String errorMessage;
@@ -645,6 +649,11 @@ public abstract class AbstractAntlr4Parser
 
 
 
+  /**
+   * Custom error strategy that delegates error message creation to the enclosing parser's
+   * {@code createInputMismatchMessage}, {@code createMissingTokenMessage}, {@code createUnwantedTokenMessage},
+   * and {@code createNoViableAlternativeMessage} methods, allowing subclasses to customize error reporting.
+   */
   private final class ParserErrorHandler extends DefaultErrorStrategy
   {
     private final Parser parser;
