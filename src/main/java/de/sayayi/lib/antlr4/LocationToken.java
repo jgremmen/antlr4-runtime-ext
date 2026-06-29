@@ -51,6 +51,8 @@ public class LocationToken implements Token
    * is taken from the context's stop token.
    *
    * @param ctx  the parser rule context to extract location information from, not {@code null}
+   *
+   * @since 0.7.1
    */
   public LocationToken(@NotNull ParserRuleContext ctx)
   {
